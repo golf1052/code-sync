@@ -1,6 +1,7 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
-import * as vscode from 'vscode'; 
+import * as vscode from 'vscode';
+var request = require('request');
 
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
@@ -15,6 +16,16 @@ export function activate(context: vscode.ExtensionContext) {
 	// The commandId parameter must match the command field in package.json
 	var disposable = vscode.commands.registerCommand('extension.sayHello', () => {
 		// The code you place here will be executed every time your command is executed
+		
+		var clientId: string = '';
+		
+		var url: string = 'https://login.live.com/oauth20_authorize.srf?client_id=' + clientId + '&scope=wl.signin onedrive.appfolder&response_type=token&redirect_uri=https://login.live.com/oauth20_desktop.srf';
+		url 
+		request('', function (error, response, body) {
+			if (!error && response.statusCode == 200) {
+				console.log(body);
+			}
+		});
 
 		// Display a message box to the user
 		vscode.window.showInformationMessage('Hello World!');
