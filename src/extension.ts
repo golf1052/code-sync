@@ -21,7 +21,10 @@ export async function activate(context: vscode.ExtensionContext) {
 	console.log('Congratulations, your extension "code-sync" is now active!');
 		
 	await checkForSettings();
-	console.log(getInstalledExtensions());
+	let installedExtensions: vscode.Extension<any>[] = getInstalledExtensions();
+	for (let i: number = 0; i < installedExtensions.length; i++) {
+		await saveExtensionToExternal(installedExtensions[i]);
+	}
 	// fs.access(vsCodeExtensionsDir, fs.R_OK, function (err) {
 	// 	console.log(err ? 'no access' : 'can read');
 	// });
@@ -78,4 +81,41 @@ function getInstalledExtensions(): vscode.Extension<any>[] {
 		}
 	});
 	return extensions;
+}
+
+async function saveExtensionToExternal(extension: vscode.Extension<any>) {
+	let externalExtensionPath: string = codeSyncDir + '/' + extension.id;
+	if (await fs.exists(externalExtensionPath) == false) {
+		await fs.makeDirectory(codeSyncDir + '/' + extension.id);
+	}
+	let externalPackageInfo = await tryGetExternalPackageJson(externalExtensionPath + '/package.json');
+	if (externalPackageInfo != null) {
+		if (extension.packageJSON.version == externalPackageInfo.version) {
+			// versions are the same so return
+			return;
+		}
+	}
+	if (extension.packageJSON.contributes.themes) {
+		ncp(extension.extensionPath, externalExtensionPath, function (err) {
+			if (err) {
+				console.log('Error while copying themes extension to external: ' + err);
+			}
+			else {
+				console.log('Copying theme extension to external completed successfully');
+			}
+		});
+	}
+	else {
+		// just copy the package.json if it's something else
+		await fs.copyTree(extension.extensionPath + '/package.json', externalExtensionPath + '/package.json');
+	}
+}
+
+async function tryGetExternalPackageJson(path: string) {
+	if (await fs.exists(path)) {
+		return JSON.parse(await fs.read(path));
+	}
+	else {
+		return null;
+	}
 }
