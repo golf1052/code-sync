@@ -1,6 +1,4 @@
 "use strict";
-// The module 'vscode' contains the VS Code extensibility API
-// Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
 var request = require('request');
 var os = require('os');
@@ -17,48 +15,31 @@ enum ExtensionLocation {
 	External
 }
 
-// this method is called when your extension is activated
-// your extension is activated the very first time the command is executed
 export async function activate(context: vscode.ExtensionContext) {
-
-	// Use the console to output diagnostic information (console.log) and errors (console.error)
-	// This line of code will only be executed once when your extension is activated
 	console.log('Congratulations, your extension "code-sync" is now active!');
 		
 	await checkForSettings();
-	let e = await getMissingPackagesFrom(ExtensionLocation.External);
-	displayMissingPackages(e);
-	// let installedExtensions: vscode.Extension<any>[] = getInstalledExtensions();
-	// for (let i: number = 0; i < installedExtensions.length; i++) {
-	// 	await saveExtensionToExternal(installedExtensions[i]);
-	// }
-	// fs.access(vsCodeExtensionsDir, fs.R_OK, function (err) {
-	// 	console.log(err ? 'no access' : 'can read');
-	// });
-	
-	// fs.access(codeSyncDir, fs.R_OK | fs.W_OK, function (err) {
-	// 	if (err) {
-	// 		fs.mkdirSync(codeSyncDir);
-	// 	}
-	// });
-	// ncp(vsCodeExtensionsDir, codeSyncDir, function (err) {
-	// 	if (err) {
-	// 		console.log(err);
-	// 	}
-	// 	else {
-	// 		console.log('copy completed successfully');
-	// 	}
-	// });
-
-	// The command has been defined in the package.json file
-	// Now provide the implementation of the command with registerCommand
-	// The commandId parameter must match the command field in package.json
 	let exportExtensionsDisposable = vscode.commands.registerCommand('extension.exportExtensions', () => {
-		// Display a message box to the user
 		vscode.window.showInformationMessage('Extensions Exported!');
 	});
 	
+	let listMissingInstalledDisposable = vscode.commands.registerCommand('extension.listMissingInstalled', () => {
+		let missingPromise = getMissingPackagesFrom(ExtensionLocation.Installed);
+		missingPromise.then(function (missing) {
+			displayMissingPackages(missing);
+		});
+	});
+	
+	let listMissingExternalDisposable = vscode.commands.registerCommand('extension.listMissingExternal', () => {
+		let missingPromise = getMissingPackagesFrom(ExtensionLocation.External);
+		missingPromise.then(function (missing) {
+			displayMissingPackages(missing);
+		});
+	});
+	
 	context.subscriptions.push(exportExtensionsDisposable);
+	context.subscriptions.push(listMissingInstalledDisposable);
+	context.subscriptions.push(listMissingExternalDisposable);
 }
 
 function displayMissingPackages(m: any) {
@@ -71,10 +52,10 @@ function displayMissingPackages(m: any) {
 	}
 	for (let i = 0; i < m.missing.length; i++) {
 		if (m.missing[i].why == 'missing') {
-			message += m.missing[i].extension.packageJSON.name + '; ';
+			message += m.missing[i].extension.packageJSON.displayName + '; ';
 		}
 		else if (m.missing[i].why == 'version') {
-			message += m.missing[i].extension.packageJSON.name + ' - Outdated; ';
+			message += m.missing[i].extension.packageJSON.displayName + ' - Outdated; ';
 		}
 	}
 	vscode.window.showInformationMessage(message);

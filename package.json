@@ -15,10 +15,20 @@
 	],
 	"main": "./out/src/extension",
 	"contributes": {
-		"commands": [{
-			"command": "extension.exportExtensions",
-			"title": "Export Extensions"
-		}]
+		"commands": [
+			{
+				"command": "extension.exportExtensions",
+				"title": "Export Extensions"
+			},
+			{
+				"command": "extension.listMissingInstalled",
+				"title": "List Missing Installed Extensions"
+			},
+			{
+				"command": "extension.listMissingExternal",
+				"title": "List Missing External Extensions"
+			}
+		]
 	},
 	"scripts": {
 		"vscode:prepublish": "node ./node_modules/vscode/bin/compile",
