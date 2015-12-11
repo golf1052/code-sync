@@ -26,7 +26,8 @@ export async function activate(context: vscode.ExtensionContext) {
 	console.log('Congratulations, your extension "code-sync" is now active!');
 		
 	await checkForSettings();
-	let e = await getMissingPackagesFrom(ExtensionLocation.Installed);
+	let e = await getMissingPackagesFrom(ExtensionLocation.External);
+	displayMissingPackages(e);
 	// let installedExtensions: vscode.Extension<any>[] = getInstalledExtensions();
 	// for (let i: number = 0; i < installedExtensions.length; i++) {
 	// 	await saveExtensionToExternal(installedExtensions[i]);
@@ -58,6 +59,25 @@ export async function activate(context: vscode.ExtensionContext) {
 	});
 	
 	context.subscriptions.push(exportExtensionsDisposable);
+}
+
+function displayMissingPackages(m: any) {
+	let message: string = '';
+	if (m.which == ExtensionLocation.External) {
+		message = 'Extensions missing from external: ';
+	}
+	else if (m.which == ExtensionLocation.Installed) {
+		message = 'Extensions missing from installed: ';
+	}
+	for (let i = 0; i < m.missing.length; i++) {
+		if (m.missing[i].why == 'missing') {
+			message += m.missing[i].extension.packageJSON.name + '; ';
+		}
+		else if (m.missing[i].why == 'version') {
+			message += m.missing[i].extension.packageJSON.name + ' - Outdated; ';
+		}
+	}
+	vscode.window.showInformationMessage(message);
 }
 
 async function checkForSettings() {
@@ -129,6 +149,15 @@ async function saveExtensionToExternal(extension: vscode.Extension<any>) {
 	}
 }
 
+class MissingExtension {
+	why: string;
+	extension: any;
+	constructor(w, e) {
+		this.why = w;
+		this.extension = e;
+	}
+}
+
 /*
 * External == Which installed packages are not reflected in external
 * Installed == Which external packages are not reflected in installed
@@ -139,47 +168,61 @@ async function getMissingPackagesFrom(which: ExtensionLocation): Promise<any> {
 	let r: any = {};
 	if (which == ExtensionLocation.External) {
 		r.which = ExtensionLocation.External;
-		let missing: vscode.Extension<any>[] = [];
+		r.missing = [];
 		for (let i = 0; i < installed.length; i++) {
 			let found: boolean = false;
+			let why: string = '';
 			for (let j = 0; j < external.length; j++) {
-				if (installed[i].id == external[j].id &&
-				installed[i].packageJSON.version == external[j].version) {
-					found = true;
-					installed.splice(i, 1);
-					external.splice(j, 1);
-					i--;
-					j--;
-					break;
+				if (installed[i].id == external[j].id) {
+					if (installed[i].packageJSON.version == external[j].version) {
+						found = true;
+						installed.splice(i, 1);
+						external.splice(j, 1);
+						i--;
+						j--;
+						break;
+					}
+					else {
+						why = 'version'
+					}
+				}
+				else {
+					why = 'missing'
 				}
 			}
 			if (!found) {
-				missing.push(installed[i]);
+				r.missing.push(new MissingExtension(why, installed[i]));
 			}
 		}
-		r.missing = missing;
 	}
 	else if (which == ExtensionLocation.Installed) {
 		r.which = ExtensionLocation.Installed;
-		let missing: ExternalExtension[] = [];
+		r.missing = [];
 		for (let i = 0; i < external.length; i++) {
 			let found: boolean = false;
+			let why: string = '';
 			for (let j = 0; j < installed.length; j++) {
-				if (external[i].id == installed[j].id &&
-				external[i].version == installed[j].packageJSON.version) {
-					found = true;
-					external.splice(i, 1);
-					installed.splice(j, 1);
-					i--;
-					j--;
-					break;
+				if (external[i].id == installed[j].id) {
+					if (external[i].version == installed[j].packageJSON.version) {
+						found = true;
+						external.splice(i, 1);
+						installed.splice(j, 1);
+						i--;
+						j--;
+						break;
+					}
+					else {
+						why = 'version';
+					}
+				}
+				else {
+					why = 'missing';
 				}
 			}
 			if (!found) {
-				missing.push(external[i]);
+				r.missing.push(new MissingExtension(why, external[i]));
 			}
 		}
-		r.missing = missing;
 	}
 	return r;
 }
