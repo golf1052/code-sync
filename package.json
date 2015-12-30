@@ -18,16 +18,40 @@
 		"commands": [
 			{
 				"command": "extension.exportExtensions",
-				"title": "Export Extensions"
+				"title": "CodeSync: Export extensions"
 			},
 			{
 				"command": "extension.listMissingInstalled",
-				"title": "List Missing Installed Extensions"
+				"title": "CodeSync: List missing installed extensions"
 			},
 			{
 				"command": "extension.listMissingExternal",
-				"title": "List Missing External Extensions"
-			}
+				"title": "CodeSync: List missing external extensions"
+			},
+            {
+                "command": "extension.listExcludedInstalled",
+                "title": "CodeSync: List excluded installed extensions"
+            },
+            {
+                "command": "extension.listExcludedExternal",
+                "title": "CodeSync: List excluded external extensions"
+            },
+            {
+                "command": "extension.addExcludedInstalled",
+                "title": "CodeSync: Exclude an installed extension"
+            },
+            {
+                "command": "extension.addExcludedExternal",
+                "title": "CodeSync: Exclude an external extension"
+            },
+            {
+                "command": "extension.removeExcludedInstalled",
+                "title": "CodeSync: Remove an exclusion - Installed"
+            },
+            {
+                "command": "extension.removeExcludedExternal",
+                "title": "CodeSync: Remove an exclusion - External"
+            }
 		]
 	},
 	"scripts": {

@@ -6,8 +6,8 @@ var fs = require('q-io/fs');
 var ncp = require('ncp').ncp;
 ncp.limit = 16;
 
-var vsCodeExtDir: string = os.homedir() + '/.vscode/extensions';
-var codeSyncExtDir: string = vsCodeExtDir + '/golf1052.code-sync';
+var vsCodeExtensionDir: string = os.homedir() + '/.vscode/extensions';
+var codeSyncExtensionDir: string = vsCodeExtensionDir + '/golf1052.code-sync';
 var codeSyncDir: string;
 
 enum ExtensionLocation {
@@ -19,6 +19,7 @@ export async function activate(context: vscode.ExtensionContext) {
 	console.log('Congratulations, your extension "code-sync" is now active!');
 		
 	await checkForSettings();
+    
 	let exportExtensionsDisposable = vscode.commands.registerCommand('extension.exportExtensions', () => {
 		vscode.window.showInformationMessage('Extensions Exported!');
 	});
@@ -36,10 +37,191 @@ export async function activate(context: vscode.ExtensionContext) {
 			displayMissingPackages(missing);
 		});
 	});
+    
+    let listExcludedInstalledDisposable = vscode.commands.registerCommand('extension.listExcludedInstalled', () => {
+        displayExcludedPackages(ExtensionLocation.Installed);
+    });
+    
+    let listExcludedExternalDisposable = vscode.commands.registerCommand('extension.listExcludedExternal', () => {
+        displayExcludedPackages(ExtensionLocation.External);
+    });
+    
+    let addExcludedInstalledDisposable = vscode.commands.registerCommand('extension.addExcludedInstalled', () => {
+        addExcludedPackage(ExtensionLocation.Installed);
+    });
+    
+    let addExcludedExternalDisposable = vscode.commands.registerCommand('extension.addExcludedExternal', () => {
+        addExcludedPackage(ExtensionLocation.External);
+    });
+    
+    let removeExcludedInstalledDisposable = vscode.commands.registerCommand('extension.removeExcludedInstalled', () => {
+        removeExcludedPackage(ExtensionLocation.Installed);
+    });
+    
+    let removeExcludedExternalDisposable = vscode.commands.registerCommand('extension.removeExcludedExternal', () => {
+        removeExcludedPackage(ExtensionLocation.External);
+    });
 	
 	context.subscriptions.push(exportExtensionsDisposable);
 	context.subscriptions.push(listMissingInstalledDisposable);
 	context.subscriptions.push(listMissingExternalDisposable);
+    context.subscriptions.push(listExcludedInstalledDisposable);
+    context.subscriptions.push(listExcludedExternalDisposable);
+    context.subscriptions.push(addExcludedInstalledDisposable);
+    context.subscriptions.push(addExcludedExternalDisposable);
+    context.subscriptions.push(removeExcludedInstalledDisposable);
+    context.subscriptions.push(removeExcludedExternalDisposable);
+}
+
+async function getSettings(): Promise<any> {
+    return JSON.parse(await fs.read(codeSyncExtensionDir + '/settings.json'));
+}
+
+async function saveSettings(settings: any) {
+    await fs.write(codeSyncExtensionDir + '/settings.json', JSON.stringify(settings, null, 4));
+}
+
+async function checkForSettings() {
+	if (await fs.exists(codeSyncExtensionDir) == false) {
+		await fs.makeDirectory(codeSyncExtensionDir);
+	}
+	if (await fs.exists(codeSyncExtensionDir + '/settings.json') == false) {
+		let path: string = await vscode.window.showInputBox({
+			prompt: 'Enter the full path to where you want code-sync to sync your extensions',
+			value: os.homedir() + '/OneDrive/Apps/code-sync'
+		});
+		let tmpSettings = {
+			externalPath: path,
+            excluded: {
+                installed: [],
+                external: []
+            }
+		};
+		await saveSettings(tmpSettings);
+	}
+	
+	let settings = await getSettings();
+	codeSyncDir = settings.externalPath;
+}
+
+async function getExcludedPackages(location: ExtensionLocation): Promise<string[]> {
+    let settings = await getSettings();
+    let value: string[] = [];
+    if (location == ExtensionLocation.Installed) {
+        value = settings.excluded.installed;
+    }
+    else if (location == ExtensionLocation.External) {
+        value = settings.excluded.external;
+    }
+    return value;
+}
+
+async function saveExcludedPackages(excluded: string[], location: ExtensionLocation) {
+    let settings = await getSettings();
+    if (location == ExtensionLocation.Installed) {
+        settings.excluded.installed = excluded;
+    }
+    else if (location == ExtensionLocation.External) {
+        settings.excluded.external = excluded;
+    }
+    await saveSettings(settings);
+}
+
+async function addExcludedPackage(location: ExtensionLocation) {
+    let excluded: string[] = await getExcludedPackages(location);
+    let items: vscode.QuickPickItem[] = [];
+    if (location == ExtensionLocation.Installed) {
+        let installed: vscode.Extension<any>[] = getInstalledExtensions();
+        if (installed.length == 0) {
+            vscode.window.showInformationMessage('There are no installed extensions.');
+            return;
+        }
+        installed.forEach(extension => {
+            if (excluded.indexOf(extension.id) == -1) {
+                let item: vscode.QuickPickItem = {
+                    label: extension.id,
+                    description: extension.packageJSON.description
+                };
+                items.push(item);
+            }
+        });
+        
+        if (items.length == 0) {
+            vscode.window.showInformationMessage('All installed extensions excluded.');
+            return;
+        }
+    }
+    else if (location == ExtensionLocation.External) {
+        let external: ExternalExtension[] = await getExternalExtensions();
+        if (external.length == 0) {
+            vscode.window.showInformationMessage('There are no external extensions.');
+            return;
+        }
+        external.forEach(extension => {
+            if (excluded.indexOf(extension.id) == -1) {
+                let item: vscode.QuickPickItem = {
+                    label: extension.id,
+                    description: extension.packageJSON.description
+                };
+                items.push(item);
+            }
+        });
+        
+        if (items.length == 0) {
+            vscode.window.showInformationMessage('All external extensions excluded.');
+            return;
+        }
+    }
+    
+    
+    let result: vscode.QuickPickItem = await vscode.window.showQuickPick(items, {matchOnDescription: true});
+    if (result) {
+        excluded.push(result.label);
+        await saveExcludedPackages(excluded, location);
+        vscode.window.showInformationMessage('Successfully excluded package: ' + result.label);
+    }
+}
+
+async function removeExcludedPackage(location: ExtensionLocation) {
+    let excluded: string[] = await getExcludedPackages(location);
+    let items: vscode.QuickPickItem[] = [];
+    excluded.forEach(str => {
+        items.push({label: str, description: ''});
+    });
+    if (location == ExtensionLocation.Installed) {
+        if (items.length == 0) {
+            vscode.window.showInformationMessage('No installed extensions excluded.');
+            return;
+        }
+    }
+    else if (location == ExtensionLocation.External) {
+        if (items.length == 0) {
+            vscode.window.showInformationMessage('No external extensions excluded.');
+            return;
+        }
+    }
+    let result: vscode.QuickPickItem = await vscode.window.showQuickPick(items);
+    if (result) {
+        excluded.splice(excluded.indexOf(result.label));
+        await saveExcludedPackages(excluded, location);
+        vscode.window.showInformationMessage('Successfully included package: ' + result.label);
+    }
+}
+
+async function displayExcludedPackages(location: ExtensionLocation) {
+    let excluded: string[] = await getExcludedPackages(location);
+    if (location == ExtensionLocation.Installed) {
+        vscode.window.showInformationMessage('Excluded installed packages:')
+        for (let i: number = 0; i < excluded.length; i++) {
+            vscode.window.showInformationMessage(excluded[i]);
+        }
+    }
+    else if (location == ExtensionLocation.External) {
+        vscode.window.showInformationMessage('Excluded external packages:');
+        for (let i: number = 0; i < excluded.length; i++) {
+            vscode.window.showInformationMessage(excluded[i]);
+        }
+    }
 }
 
 function displayMissingPackages(m: any) {
@@ -59,25 +241,6 @@ function displayMissingPackages(m: any) {
 		}
 	}
 	vscode.window.showInformationMessage(message);
-}
-
-async function checkForSettings() {
-	if (await fs.exists(codeSyncExtDir) == false) {
-		await fs.makeDirectory(codeSyncExtDir);
-	}
-	if (await fs.exists(codeSyncExtDir + '/settings.json') == false) {
-		let path: string = await vscode.window.showInputBox({
-			prompt: 'Enter the full path to where you want code-sync to sync your extensions',
-			value: os.homedir() + '/OneDrive/Apps/code-sync'
-		});
-		let tmpSettings = {
-			externalPath: path
-		};
-		await fs.write(codeSyncExtDir + '/settings.json', JSON.stringify(tmpSettings));
-	}
-	
-	let settings = JSON.parse(await fs.read(codeSyncExtDir + '/settings.json'));
-	codeSyncDir = settings.externalPath;
 }
 
 function getInstalledExtensions(): vscode.Extension<any>[] {
