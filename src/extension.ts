@@ -253,6 +253,74 @@ function getInstalledExtensions(): vscode.Extension<any>[] {
 	return extensions;
 }
 
+async function cleanExternalExtensions() {
+    let folders: string[] = await fs.list(codeSyncDir);
+    let extensions: any[] = [];
+    for (let i: number = 0; i < folders.length; i++) {
+        extensions.push({
+            id: '',
+            version: ''
+        })
+    }
+}
+
+export function isVersionGreaterThan(a: string, b: string): number {
+    if (a === b) {
+        return 0;
+    }
+    else if ((typeof a !== 'undefined' && typeof b === 'undefined') ||
+    (a !== null && b === null)) {
+        return 1;
+    }
+    else if ((typeof a === 'undefined' && typeof b !== 'undefined') ||
+    (a === null && b !== null)) {
+        return -1;
+    }
+    else {
+        let aSplit: string[] = a.split('.');
+        let bSplit: string[] = b.split('.');
+        if (aSplit.length >= bSplit.length) {
+            for (let i: number = 0; i < aSplit.length; i++) {
+                let aNum: number = parseInt(aSplit[i]);
+                if (bSplit[i]) {
+                    let bNum: number = parseInt(bSplit[i]);
+                    if (aNum > bNum) {
+                        return 1;
+                    }
+                    else if (aNum < bNum) {
+                        return -1;
+                    }
+                }
+                else {
+                    if (aNum > 0) {
+                        return 1;
+                    }
+                }
+            }
+        }
+        else {
+            for (let i: number = 0; i < bSplit.length; i++) {
+                let bNum: number = parseInt(bSplit[i]);
+                if (aSplit[i]) {
+                    let aNum: number = parseInt(aSplit[i]);
+                    if (bNum > aNum) {
+                        return -1;
+                    }
+                    else if (bNum < aNum) {
+                        return 1;
+                    }
+                }
+                else {
+                    if (bNum > 0) {
+                        return -1;
+                    }
+                }
+            }
+        }
+        return 0;
+    }
+}
+
 async function getExternalExtensions(): Promise<ExternalExtension[]> {
 	let folders: string[] = await fs.list(codeSyncDir);
 	let externalExtensions: ExternalExtension[] = [];
@@ -266,9 +334,9 @@ async function getExternalExtensions(): Promise<ExternalExtension[]> {
 }
 
 async function saveExtensionToExternal(extension: vscode.Extension<any>) {
-	let externalExtensionPath: string = codeSyncDir + '/' + extension.id;
+	let externalExtensionPath: string = codeSyncDir + '/' + extension.id + '-' + extension.packageJSON.version;
 	if (await fs.exists(externalExtensionPath) == false) {
-		await fs.makeDirectory(codeSyncDir + '/' + extension.id);
+		await fs.makeDirectory(codeSyncDir + '/' + extension.id + '-' + extension.packageJSON.version);
 	}
 	let externalPackageInfo = await tryGetExternalPackageJson(externalExtensionPath);
 	if (externalPackageInfo != null) {
@@ -306,11 +374,11 @@ class MissingExtension {
 * External == Which installed packages are not reflected in external
 * Installed == Which external packages are not reflected in installed
 */
-async function getMissingPackagesFrom(which: ExtensionLocation): Promise<any> {
+async function getMissingPackagesFrom(location: ExtensionLocation): Promise<any> {
 	let installed = getInstalledExtensions();
 	let external = await getExternalExtensions();
 	let r: any = {};
-	if (which == ExtensionLocation.External) {
+	if (location == ExtensionLocation.External) {
 		r.which = ExtensionLocation.External;
 		r.missing = [];
 		for (let i = 0; i < installed.length; i++) {
@@ -339,7 +407,7 @@ async function getMissingPackagesFrom(which: ExtensionLocation): Promise<any> {
 			}
 		}
 	}
-	else if (which == ExtensionLocation.Installed) {
+	else if (location == ExtensionLocation.Installed) {
 		r.which = ExtensionLocation.Installed;
 		r.missing = [];
 		for (let i = 0; i < external.length; i++) {
