@@ -22,6 +22,7 @@ export async function activate(context: vscode.ExtensionContext) {
 	await checkForSettings();
     
 	let exportExtensionsDisposable = vscode.commands.registerCommand('extension.exportExtensions', async function() {
+        await exportExtensions();
 		vscode.window.showInformationMessage('Extensions Exported!');
 	});
 	
@@ -268,13 +269,23 @@ async function cleanExternalExtensions() {
     let markedForDeath: string[] = [];
     
     for (let i: number = 0; i < folders.length; i++) {
-        let folderSplit: string[] = folders[i].split('-');
+        let id: string = '';
         let version: string = '';
-        if (folderSplit[1]) {
-            version = folderSplit[1];
+        if (folders[i].lastIndexOf('-') != -1) {
+            let tmpVersion = folders[i].substring(folders[i].lastIndexOf('-') + 1);
+            if (!isNaN(parseInt(tmpVersion[0])) && !isNaN(parseInt(tmpVersion[tmpVersion.length - 1]))) {
+                id = folders[i].substring(0, folders[i].lastIndexOf('-'));
+                version = tmpVersion;
+            }
+            else {
+                id = folders[i];
+            }
+        }
+        else {
+            id = folders[i];
         }
         let tmpExtension = {
-            id: folderSplit[0],
+            id: id,
             version: version
         };
         let addedExtension: boolean = false;
@@ -316,12 +327,20 @@ async function getExternalExtensions(): Promise<ExternalExtension[]> {
 	let folders: string[] = await fs.list(codeSyncDir);
 	let externalExtensions: ExternalExtension[] = [];
 	for (let i = 0; i < folders.length; i++) {
-		let e = await loadExternalExtension(codeSyncDir + '/'+ folders[i]);
+		let e = await loadExternalExtension(codeSyncDir + '/' + folders[i]);
 		if (e != null) {
 			externalExtensions.push(e);
 		}
 	}
 	return externalExtensions;
+}
+
+async function exportExtensions() {
+    let missing: any = await getMissingPackagesFrom(ExtensionLocation.External);
+    for (let i: number = 0; i < missing.missing.length; i++) {
+        await saveExtensionToExternal(missing.missing[i].extension);
+    }
+    await cleanExternalExtensions();
 }
 
 async function saveExtensionToExternal(extension: vscode.Extension<any>) {
