@@ -1,6 +1,6 @@
 "use strict";
 import * as vscode from 'vscode';
-import * as util from 'util';
+import * as helpers from '../src/helpers';
 var request = require('request');
 var os = require('os');
 var fs = require('q-io/fs');
@@ -21,22 +21,18 @@ export async function activate(context: vscode.ExtensionContext) {
 		
 	await checkForSettings();
     
-	let exportExtensionsDisposable = vscode.commands.registerCommand('extension.exportExtensions', () => {
+	let exportExtensionsDisposable = vscode.commands.registerCommand('extension.exportExtensions', async function() {
 		vscode.window.showInformationMessage('Extensions Exported!');
 	});
 	
-	let listMissingInstalledDisposable = vscode.commands.registerCommand('extension.listMissingInstalled', () => {
-		let missingPromise = getMissingPackagesFrom(ExtensionLocation.Installed);
-		missingPromise.then(function (missing) {
-			displayMissingPackages(missing);
-		});
+	let listMissingInstalledDisposable = vscode.commands.registerCommand('extension.listMissingInstalled', async function() {
+		let missing: any = await getMissingPackagesFrom(ExtensionLocation.Installed);
+        displayMissingPackages(missing);
 	});
 	
-	let listMissingExternalDisposable = vscode.commands.registerCommand('extension.listMissingExternal', () => {
-		let missingPromise = getMissingPackagesFrom(ExtensionLocation.External);
-		missingPromise.then(function (missing) {
-			displayMissingPackages(missing);
-		});
+	let listMissingExternalDisposable = vscode.commands.registerCommand('extension.listMissingExternal', async function() {
+		let missing: any = await getMissingPackagesFrom(ExtensionLocation.External);
+        displayMissingPackages(missing);
 	});
     
     let listExcludedInstalledDisposable = vscode.commands.registerCommand('extension.listExcludedInstalled', () => {
@@ -226,22 +222,34 @@ async function displayExcludedPackages(location: ExtensionLocation) {
 }
 
 function displayMissingPackages(m: any) {
-	let message: string = '';
-	if (m.which == ExtensionLocation.External) {
-		message = 'Extensions missing from external: ';
-	}
-	else if (m.which == ExtensionLocation.Installed) {
-		message = 'Extensions missing from installed: ';
-	}
-	for (let i = 0; i < m.missing.length; i++) {
-		if (m.missing[i].why == 'missing') {
-			message += m.missing[i].extension.packageJSON.displayName + '; ';
-		}
-		else if (m.missing[i].why == 'version') {
-			message += m.missing[i].extension.packageJSON.displayName + ' - Outdated; ';
-		}
-	}
-	vscode.window.showInformationMessage(message);
+    if (m.missing.length == 0) {
+        if (m.which == ExtensionLocation.Installed) {
+            vscode.window.showInformationMessage('No extensions missing from local.');
+        }
+        else if (m.which == ExtensionLocation.External) {
+            vscode.window.showInformationMessage('No extensions missing from external.');
+        }
+    }
+    else {
+        if (m.which == ExtensionLocation.External) {
+            vscode.window.showInformationMessage('Extensions missing from external:');
+        }
+        else if (m.which == ExtensionLocation.Installed) {
+            vscode.window.showInformationMessage('Extensions missing from installed:');
+        }
+        for (let i = 0; i < m.missing.length; i++) {
+            let message: string = m.missing[i].extension.packageJSON.displayName;
+            if (!message) {
+                message = m.missing[i].extension.id;
+            }
+            if (m.missing[i].why == 'missing') {
+                vscode.window.showInformationMessage(message);
+            }
+            else if (m.missing[i].why == 'version') {
+                vscode.window.showInformationMessage(message + ' - Outdated');
+            }
+        }
+    }
 }
 
 function getInstalledExtensions(): vscode.Extension<any>[] {
@@ -257,15 +265,54 @@ function getInstalledExtensions(): vscode.Extension<any>[] {
 async function cleanExternalExtensions() {
     let folders: string[] = await fs.list(codeSyncDir);
     let extensions: any[] = [];
+    let markedForDeath: string[] = [];
+    
     for (let i: number = 0; i < folders.length; i++) {
-        extensions.push({
-            id: '',
-            version: ''
-        })
+        let folderSplit: string[] = folders[i].split('-');
+        let version: string = '';
+        if (folderSplit[1]) {
+            version = folderSplit[1];
+        }
+        let tmpExtension = {
+            id: folderSplit[0],
+            version: version
+        };
+        let addedExtension: boolean = false;
+        for (let j: number = 0; j < extensions.length; j++) {
+            if (extensions[j].id == tmpExtension.id) {
+                if (helpers.isVersionGreaterThan(tmpExtension.version, extensions[j].version) == 1) {
+                    let str: string = extensions[j].id;
+                    if (extensions[j].version != '') {
+                        str += '-' + extensions[j].version;
+                    }
+                    markedForDeath.push(str);
+                    extensions.splice(j, 1);
+                    extensions.push(tmpExtension);
+                    addedExtension = true;
+                    break;
+                }
+                else {
+                    let str: string = tmpExtension.id;
+                    if (tmpExtension.version != '') {
+                        str += '-' + tmpExtension.version;
+                    }
+                    markedForDeath.push(str);
+                    addedExtension = true;
+                }
+            }
+        }
+        if (!addedExtension) {
+            extensions.push(tmpExtension);
+        }
+    }
+    
+    for (let i: number = 0; i < markedForDeath.length; i++) {
+        await fs.removeTree(codeSyncDir + '/' + markedForDeath[i]);
     }
 }
 
 async function getExternalExtensions(): Promise<ExternalExtension[]> {
+    await cleanExternalExtensions();
 	let folders: string[] = await fs.list(codeSyncDir);
 	let externalExtensions: ExternalExtension[] = [];
 	for (let i = 0; i < folders.length; i++) {
@@ -327,7 +374,7 @@ async function getMissingPackagesFrom(location: ExtensionLocation): Promise<any>
 		r.missing = [];
 		for (let i = 0; i < installed.length; i++) {
 			let found: boolean = false;
-			let why: string = '';
+			let why: string = 'missing';
 			for (let j = 0; j < external.length; j++) {
 				if (installed[i].id == external[j].id) {
 					if (installed[i].packageJSON.version == external[j].version) {
@@ -342,9 +389,6 @@ async function getMissingPackagesFrom(location: ExtensionLocation): Promise<any>
 						why = 'version'
 					}
 				}
-				else {
-					why = 'missing'
-				}
 			}
 			if (!found) {
 				r.missing.push(new MissingExtension(why, installed[i]));
@@ -356,7 +400,7 @@ async function getMissingPackagesFrom(location: ExtensionLocation): Promise<any>
 		r.missing = [];
 		for (let i = 0; i < external.length; i++) {
 			let found: boolean = false;
-			let why: string = '';
+			let why: string = 'missing';
 			for (let j = 0; j < installed.length; j++) {
 				if (external[i].id == installed[j].id) {
 					if (external[i].version == installed[j].packageJSON.version) {
@@ -370,9 +414,6 @@ async function getMissingPackagesFrom(location: ExtensionLocation): Promise<any>
 					else {
 						why = 'version';
 					}
-				}
-				else {
-					why = 'missing';
 				}
 			}
 			if (!found) {
