@@ -71,6 +71,20 @@ export async function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(removeExcludedExternalDisposable);
 }
 
+async function importExtensions() {
+}
+
+async function exportExtensions() {
+    let missing: any = await getMissingPackagesFrom(ExtensionLocation.External);
+    let excluded: string[] = await getExcludedPackages(ExtensionLocation.Installed);
+    for (let i: number = 0; i < missing.missing.length; i++) {
+        if (excluded.indexOf(missing.missing[i].extension.id) == -1) {
+            await saveExtensionToExternal(missing.missing[i].extension);
+        }
+    }
+    await cleanExternalExtensions();
+}
+
 async function getSettings(): Promise<any> {
     return JSON.parse(await fs.read(codeSyncExtensionDir + '/settings.json'));
 }
@@ -171,7 +185,6 @@ async function addExcludedPackage(location: ExtensionLocation) {
         }
     }
     
-    
     let result: vscode.QuickPickItem = await vscode.window.showQuickPick(items, {matchOnDescription: true});
     if (result) {
         excluded.push(result.label);
@@ -200,7 +213,7 @@ async function removeExcludedPackage(location: ExtensionLocation) {
     }
     let result: vscode.QuickPickItem = await vscode.window.showQuickPick(items);
     if (result) {
-        excluded.splice(excluded.indexOf(result.label));
+        excluded.splice(excluded.indexOf(result.label), 1);
         await saveExcludedPackages(excluded, location);
         vscode.window.showInformationMessage('Successfully included package: ' + result.label);
     }
@@ -333,14 +346,6 @@ async function getExternalExtensions(): Promise<ExternalExtension[]> {
 		}
 	}
 	return externalExtensions;
-}
-
-async function exportExtensions() {
-    let missing: any = await getMissingPackagesFrom(ExtensionLocation.External);
-    for (let i: number = 0; i < missing.missing.length; i++) {
-        await saveExtensionToExternal(missing.missing[i].extension);
-    }
-    await cleanExternalExtensions();
 }
 
 async function saveExtensionToExternal(extension: vscode.Extension<any>) {
