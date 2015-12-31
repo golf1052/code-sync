@@ -20,20 +20,18 @@ export async function activate(context: vscode.ExtensionContext) {
 	console.log('Congratulations, your extension "code-sync" is now active!');
 		
 	await checkForSettings();
+    await importExtensions();
     
 	let exportExtensionsDisposable = vscode.commands.registerCommand('extension.exportExtensions', async function() {
         await exportExtensions();
-		vscode.window.showInformationMessage('Extensions Exported!');
 	});
 	
 	let listMissingInstalledDisposable = vscode.commands.registerCommand('extension.listMissingInstalled', async function() {
-		let missing: any = await getMissingPackagesFrom(ExtensionLocation.Installed);
-        displayMissingPackages(missing);
+        displayMissingPackages(await getMissingPackagesFrom(ExtensionLocation.Installed));
 	});
 	
 	let listMissingExternalDisposable = vscode.commands.registerCommand('extension.listMissingExternal', async function() {
-		let missing: any = await getMissingPackagesFrom(ExtensionLocation.External);
-        displayMissingPackages(missing);
+        displayMissingPackages(await getMissingPackagesFrom(ExtensionLocation.External));
 	});
     
     let listExcludedInstalledDisposable = vscode.commands.registerCommand('extension.listExcludedInstalled', () => {
@@ -72,17 +70,57 @@ export async function activate(context: vscode.ExtensionContext) {
 }
 
 async function importExtensions() {
+    vscode.window.showInformationMessage('CodeSync: Importing extensions...please note that CodeSync currently only automatically imports themes!');
+    let missing: any = await getMissingPackagesFrom(ExtensionLocation.Installed);
+    let excluded: string[] = await getExcludedPackages(ExtensionLocation.External);
+    let importedThings: string[] = [];
+    for (let i: number = 0; i < missing.missing.length; i++) {
+        if (excluded.indexOf(missing.missing[i].extension.id) == -1) {
+            if (missing.missing[i].extension.isTheme) {
+                await saveExtensionToInstalled(missing.missing[i].extension);
+                let name: string = missing.missing[i].extension.packageJSON.displayName;
+                if (!name) {
+                    name = missing.missing[i].extension.packageJSON.name;
+                }
+                importedThings.push(name);
+            }
+        }
+    }
+    
+    if (importedThings.length > 0) {
+        vscode.window.showInformationMessage('Imported extensions:');
+        for (let i: number = 0; i < importedThings.length; i++) {
+            vscode.window.showInformationMessage(importedThings[i]);
+        }
+    }
+    displayMissingPackages(await getMissingPackagesFrom(ExtensionLocation.Installed));
 }
 
 async function exportExtensions() {
     let missing: any = await getMissingPackagesFrom(ExtensionLocation.External);
     let excluded: string[] = await getExcludedPackages(ExtensionLocation.Installed);
+    let importedThings: string[] = [];
     for (let i: number = 0; i < missing.missing.length; i++) {
         if (excluded.indexOf(missing.missing[i].extension.id) == -1) {
             await saveExtensionToExternal(missing.missing[i].extension);
+            let name: string = missing.missing[i].extension.packageJSON.displayName;
+            if (!name) {
+                name = missing.missing[i].extension.packageJSON.name;
+            }
+            importedThings.push(name);
         }
     }
     await cleanExternalExtensions();
+    
+    if (importedThings.length > 0) {
+        vscode.window.showInformationMessage('Exported extensions:');
+        for (let i: number = 0; i < importedThings.length; i++) {
+            vscode.window.showInformationMessage(importedThings[i]);
+        }
+    }
+    else {
+        vscode.window.showInformationMessage('All extensions already exported.');
+    }
 }
 
 async function getSettings(): Promise<any> {
@@ -348,12 +386,43 @@ async function getExternalExtensions(): Promise<ExternalExtension[]> {
 	return externalExtensions;
 }
 
+async function saveExtensionToInstalled(extension: ExternalExtension) {
+    let installedExtensionsPath: string = vsCodeExtensionDir + '/' + extension.id + '-' + extension.version;
+    if (await fs.exists(installedExtensionsPath) == false) {
+        if (extension.isTheme) {
+            await fs.makeDirectory(installedExtensionsPath);
+        }
+        else {
+            return;
+        }
+    }
+    let packageJSON: any = await tryGetPackageJson(installedExtensionsPath);
+    if (packageJSON != null) {
+        if (extension.id == packageJSON.id && extension.version == packageJSON.version) {
+            return;
+        }
+    }
+    if (extension.isTheme) {
+        ncp(extension.extensionPath, installedExtensionsPath, function (err) {
+            if (err) {
+                console.log('Error while copying themes extension to installed: ' + err);
+            }
+            else {
+                console.log('Copying theme extension to installed completed successfully');
+            }
+        });
+    }
+    else {
+        // don't know if copying non theme extensions will work
+    }
+}
+
 async function saveExtensionToExternal(extension: vscode.Extension<any>) {
 	let externalExtensionPath: string = codeSyncDir + '/' + extension.id + '-' + extension.packageJSON.version;
 	if (await fs.exists(externalExtensionPath) == false) {
-		await fs.makeDirectory(codeSyncDir + '/' + extension.id + '-' + extension.packageJSON.version);
+		await fs.makeDirectory(externalExtensionPath);
 	}
-	let externalPackageInfo = await tryGetExternalPackageJson(externalExtensionPath);
+	let externalPackageInfo = await tryGetPackageJson(externalExtensionPath);
 	if (externalPackageInfo != null) {
 		if (extension.packageJSON.version == externalPackageInfo.version) {
 			// versions are the same so return
@@ -448,7 +517,7 @@ async function getMissingPackagesFrom(location: ExtensionLocation): Promise<any>
 	return r;
 }
 
-async function tryGetExternalPackageJson(path: string) {
+async function tryGetPackageJson(path: string): Promise<any> {
 	if (await fs.exists(path + '/package.json')) {
 		return JSON.parse(await fs.read(path + '/package.json'));
 	}
@@ -468,7 +537,7 @@ class ExternalExtension {
 async function loadExternalExtension(path: string): Promise<ExternalExtension> {
 	if (await fs.exists(path)) {
 		let e: ExternalExtension = new ExternalExtension();
-		e.packageJSON = await tryGetExternalPackageJson(path);
+		e.packageJSON = await tryGetPackageJson(path);
 		if (e.packageJSON == null) {
 			return null;
 		}
