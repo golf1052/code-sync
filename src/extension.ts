@@ -7,7 +7,7 @@ var ncp = require('ncp').ncp;
 ncp.limit = 16;
 
 var vsCodeExtensionDir: string = os.homedir() + '/.vscode/extensions';
-var codeSyncExtensionDir: string = vsCodeExtensionDir + '/golf1052.code-sync';
+var codeSyncExtensionDir: string = vsCodeExtensionDir + '/golf1052.code-sync-1.0.1';
 var codeSyncDir: string;
 
 enum ExtensionLocation {
@@ -20,6 +20,10 @@ export async function activate(context: vscode.ExtensionContext) {
 		
 	await checkForSettings();
     await importExtensions();
+    
+    let importExtensionsDisposable = vscode.commands.registerCommand('extension.importExtensions', async function() {
+        await importExtensions();
+    });
     
 	let exportExtensionsDisposable = vscode.commands.registerCommand('extension.exportExtensions', async function() {
         await exportExtensions();
@@ -66,6 +70,10 @@ export async function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(addExcludedExternalDisposable);
     context.subscriptions.push(removeExcludedInstalledDisposable);
     context.subscriptions.push(removeExcludedExternalDisposable);
+}
+
+export async function deactivate() {
+    await exportExtensions();
 }
 
 async function importExtensions() {
@@ -137,7 +145,7 @@ async function checkForSettings() {
 	}
 	if (await fs.exists(codeSyncExtensionDir + '/settings.json') == false) {
 		let path: string = await vscode.window.showInputBox({
-			prompt: 'Enter the full path to where you want code-sync to sync your extensions',
+			prompt: 'Enter the full path to where you want CodeSync to sync your extensions',
 			value: os.homedir() + '/OneDrive/Apps/code-sync'
 		});
 		let tmpSettings = {
@@ -152,6 +160,10 @@ async function checkForSettings() {
 	
 	let settings = await getSettings();
 	codeSyncDir = settings.externalPath;
+    
+    if (await fs.exists(codeSyncDir) == false) {
+        await fs.makeDirectory(codeSyncDir);
+    }
 }
 
 async function getExcludedPackages(location: ExtensionLocation): Promise<string[]> {

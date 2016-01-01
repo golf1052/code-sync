@@ -2,10 +2,10 @@
 	"name": "code-sync",
 	"displayName": "CodeSync",
 	"description": "Sync VSCode extensions using your favorite file synchronization service (OneDrive, Dropbox, Google Drive, etc.)",
-	"version": "1.0.0",
+	"version": "1.0.1",
 	"publisher": "golf1052",
     "keywords": ["sync", "extension", "extensions", "codesync"],
-    "icon": "",
+    "icon": "images/logo.png",
     "license": "See licence in LICENSE",
     "licenseUrl": "http://opensource.org/licenses/MIT",
     "homepage": "https://github.com/golf1052/code-sync",
@@ -14,7 +14,8 @@
         "url": "https://github.com/golf1052/code-sync.git"
     },
     "bugs": {
-        "url": "https://github.com/golf1052/code-sync/issues"
+        "url": "https://github.com/golf1052/code-sync/issues",
+        "email": "golf1052@msn.com"
     },
     "galleryBanner": {
         "color": "#6495ed",
@@ -32,6 +33,10 @@
 	"main": "./out/src/extension",
 	"contributes": {
 		"commands": [
+            {
+                "command": "extension.importExtensions",
+                "title": "CodeSync: Import extensions"
+            },
 			{
 				"command": "extension.exportExtensions",
 				"title": "CodeSync: Export extensions"
