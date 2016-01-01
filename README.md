@@ -1,7 +1,7 @@
 # CodeSync
 A VS Code extension that syncs extensions using your favorite file synchronization service (OneDrive, Dropbox, Google Drive, etc.)
 
-## Note that CodeSync currently only automatically imports themes. CodeSync will give a list of other extensions that are missing. You must then install these manually.
+### Note that CodeSync currently only automatically imports themes. CodeSync will give a list of other extensions that are missing. You must then install these manually.
 
 ## Usage
 1. Install CodeSync
@@ -15,8 +15,10 @@ A VS Code extension that syncs extensions using your favorite file synchronizati
 (All extensions are prefixed with "CodeSync: ")
 - Import extensions: Import extensions from your external folder to your local installation. CodeSync automatically imports extensions upon VS Code's launch.
 - Export extensions: Export extensions from your local installation to your external folder. CodeSync automatically exports extensions when VS Code is exiting.
-- List missing installed extensions: Lists external extensions not reflected in your local installation.  
-## At the moment CodeSync only automatically imports themes. Use this command to get a list of extensions you need to install manually.
+- List missing installed extensions: Lists external extensions not reflected in your local installation.
+
+### At the moment CodeSync only automatically imports themes. Use this command to get a list of extensions you need to install manually.
+
 - List missing external extensions: Lists installed extensions not reflected in your external folder.
 - Exclude an installed extension: Exclude an installed extension from syncing to your external folder.
 - Exclude an external extension: Exclude an external extension from syncing from your local installation.
