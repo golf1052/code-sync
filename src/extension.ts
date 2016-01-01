@@ -1,7 +1,6 @@
 "use strict";
 import * as vscode from 'vscode';
 import * as helpers from '../src/helpers';
-var request = require('request');
 var os = require('os');
 var fs = require('q-io/fs');
 var ncp = require('ncp').ncp;
@@ -92,6 +91,7 @@ async function importExtensions() {
         for (let i: number = 0; i < importedThings.length; i++) {
             vscode.window.showInformationMessage(importedThings[i]);
         }
+        vscode.window.showInformationMessage('Please restart Visual Studio Code to enable imported extensions!');
     }
     displayMissingPackages(await getMissingPackagesFrom(ExtensionLocation.Installed));
 }
@@ -459,10 +459,11 @@ class MissingExtension {
 * Installed == Which external packages are not reflected in installed
 */
 async function getMissingPackagesFrom(location: ExtensionLocation): Promise<any> {
-	let installed = getInstalledExtensions();
-	let external = await getExternalExtensions();
+	let installed: vscode.Extension<any>[] = getInstalledExtensions();
+	let external: ExternalExtension[] = await getExternalExtensions();
 	let r: any = {};
 	if (location == ExtensionLocation.External) {
+        let excluded: string[] = await getExcludedPackages(ExtensionLocation.Installed);
 		r.which = ExtensionLocation.External;
 		r.missing = [];
 		for (let i = 0; i < installed.length; i++) {
@@ -479,16 +480,19 @@ async function getMissingPackagesFrom(location: ExtensionLocation): Promise<any>
 						break;
 					}
 					else {
-						why = 'version'
+						why = 'version';
 					}
 				}
 			}
 			if (!found) {
-				r.missing.push(new MissingExtension(why, installed[i]));
+                if (excluded.indexOf(installed[i].id) == -1) {
+                    r.missing.push(new MissingExtension(why, installed[i]));
+                }
 			}
 		}
 	}
 	else if (location == ExtensionLocation.Installed) {
+        let excluded: string[] = await getExcludedPackages(ExtensionLocation.External);
 		r.which = ExtensionLocation.Installed;
 		r.missing = [];
 		for (let i = 0; i < external.length; i++) {
@@ -510,7 +514,9 @@ async function getMissingPackagesFrom(location: ExtensionLocation): Promise<any>
 				}
 			}
 			if (!found) {
-				r.missing.push(new MissingExtension(why, external[i]));
+                if (excluded.indexOf(external[i].id) == -1) {
+                    r.missing.push(new MissingExtension(why, external[i]));
+                }
 			}
 		}
 	}

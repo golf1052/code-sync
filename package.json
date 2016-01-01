@@ -1,9 +1,25 @@
 {
 	"name": "code-sync",
-	"displayName": "code-sync",
-	"description": "Sync VSCode extensions using OneDrive",
-	"version": "0.0.1",
+	"displayName": "CodeSync",
+	"description": "Sync VSCode extensions using your favorite file synchronization service (OneDrive, Dropbox, Google Drive, etc.)",
+	"version": "1.0.0",
 	"publisher": "golf1052",
+    "keywords": ["sync", "extension", "extensions", "codesync"],
+    "icon": "",
+    "license": "See licence in LICENSE",
+    "licenseUrl": "http://opensource.org/licenses/MIT",
+    "homepage": "https://github.com/golf1052/code-sync",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/golf1052/code-sync.git"
+    },
+    "bugs": {
+        "url": "https://github.com/golf1052/code-sync/issues"
+    },
+    "galleryBanner": {
+        "color": "#6495ed",
+        "theme": "light"
+    },
 	"engines": {
 		"vscode": "^0.10.1"
 	},
@@ -58,6 +74,10 @@
 		"vscode:prepublish": "node ./node_modules/vscode/bin/compile",
 		"compile": "node ./node_modules/vscode/bin/compile -watch -p ./"
 	},
+    "dependencies": {
+        "ncp": "^2.0.0",
+        "q-io": "^1.13.2"
+    },
 	"devDependencies": {
 		"typescript": "^1.7.3",
 		"vscode": "0.10.x"
