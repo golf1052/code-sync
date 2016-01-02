@@ -6,8 +6,9 @@ var fs = require('q-io/fs');
 var ncp = require('ncp').ncp;
 ncp.limit = 16;
 
+var currentVersion = '1.0.2';
 var vsCodeExtensionDir: string = os.homedir() + '/.vscode/extensions';
-var codeSyncExtensionDir: string = vsCodeExtensionDir + '/golf1052.code-sync-1.0.1';
+var codeSyncExtensionDir: string = vsCodeExtensionDir + '/golf1052.code-sync-' + currentVersion;
 var codeSyncDir: string;
 
 enum ExtensionLocation {
@@ -143,6 +144,18 @@ async function checkForSettings() {
 	if (await fs.exists(codeSyncExtensionDir) == false) {
 		await fs.makeDirectory(codeSyncExtensionDir);
 	}
+    // Migrate old settings.json file to new directory when upgrading
+    let folders: string[] = await fs.list(vsCodeExtensionDir);
+    for (let i: number = 0; i < folders.length; i++) {
+        let tmpExtension: FolderExtension = getFolderExtensionInfo(folders[i]);
+        if (tmpExtension.id == 'golf1052.code-sync' &&
+        helpers.isVersionGreaterThan(currentVersion, tmpExtension.version) == 1) {
+            if (await fs.exists(vsCodeExtensionDir + '/' + tmpExtension.id + '-' + tmpExtension.version + '/settings.json') == true) {
+                await fs.copy(vsCodeExtensionDir + '/' + tmpExtension.id + '-' + tmpExtension.version + '/settings.json', codeSyncExtensionDir + '/settings.json');
+                break;
+            }
+        }
+    }
 	if (await fs.exists(codeSyncExtensionDir + '/settings.json') == false) {
 		let path: string = await vscode.window.showInputBox({
 			prompt: 'Enter the full path to where you want CodeSync to sync your extensions',
@@ -326,31 +339,41 @@ function getInstalledExtensions(): vscode.Extension<any>[] {
 	return extensions;
 }
 
+interface FolderExtension {
+    id: string,
+    version: string
+}
+
+function getFolderExtensionInfo(folderName: string): FolderExtension {
+    let id: string = '';
+    let version: string = '';
+    if (folderName.lastIndexOf('-') != -1) {
+        let tmpVersion = folderName.substring(folderName.lastIndexOf('-') + 1);
+        if (!isNaN(parseInt(tmpVersion[0])) &&
+        !isNaN(parseInt(tmpVersion[tmpVersion.length - 1]))) {
+            id = folderName.substring(0, folderName.lastIndexOf('-'));
+            version = tmpVersion;
+        }
+        else {
+            id = folderName;
+        }
+    }
+    else {
+        id = folderName;
+    }
+    return {
+        id: id,
+        version: version
+    };
+}
+
 async function cleanExternalExtensions() {
     let folders: string[] = await fs.list(codeSyncDir);
     let extensions: any[] = [];
     let markedForDeath: string[] = [];
     
     for (let i: number = 0; i < folders.length; i++) {
-        let id: string = '';
-        let version: string = '';
-        if (folders[i].lastIndexOf('-') != -1) {
-            let tmpVersion = folders[i].substring(folders[i].lastIndexOf('-') + 1);
-            if (!isNaN(parseInt(tmpVersion[0])) && !isNaN(parseInt(tmpVersion[tmpVersion.length - 1]))) {
-                id = folders[i].substring(0, folders[i].lastIndexOf('-'));
-                version = tmpVersion;
-            }
-            else {
-                id = folders[i];
-            }
-        }
-        else {
-            id = folders[i];
-        }
-        let tmpExtension = {
-            id: id,
-            version: version
-        };
+        let tmpExtension: FolderExtension = getFolderExtensionInfo(folders[i]);
         let addedExtension: boolean = false;
         for (let j: number = 0; j < extensions.length; j++) {
             if (extensions[j].id == tmpExtension.id) {
