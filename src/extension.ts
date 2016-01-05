@@ -6,10 +6,12 @@ var fs = require('q-io/fs');
 var ncp = require('ncp').ncp;
 ncp.limit = 16;
 
-var currentVersion = '1.0.2';
+var currentVersion = '1.1.0';
 var vsCodeExtensionDir: string = os.homedir() + '/.vscode/extensions';
 var codeSyncExtensionDir: string = vsCodeExtensionDir + '/golf1052.code-sync-' + currentVersion;
 var codeSyncDir: string;
+var statusBar: vscode.StatusBarItem;
+var statusBarText: string;
 
 enum ExtensionLocation {
 	Installed,
@@ -21,6 +23,7 @@ export async function activate(context: vscode.ExtensionContext) {
 		
 	await checkForSettings();
     await importExtensions();
+    createStatusBar();
     
     let importExtensionsDisposable = vscode.commands.registerCommand('extension.importExtensions', async function() {
         await importExtensions();
@@ -177,6 +180,17 @@ async function checkForSettings() {
     if (await fs.exists(codeSyncDir) == false) {
         await fs.makeDirectory(codeSyncDir);
     }
+}
+
+function createStatusBar() {
+    statusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 0);
+    statusBar.show();
+    statusBar.text = '$(package) $(check) CodeSync';
+}
+
+function setStatusBarText(text: string) {
+    statusBarText = text;
+    statusBar.text = ''
 }
 
 async function getExcludedPackages(location: ExtensionLocation): Promise<string[]> {
