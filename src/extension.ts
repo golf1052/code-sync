@@ -6,7 +6,7 @@ var fs = require('q-io/fs');
 var ncp = require('ncp').ncp;
 ncp.limit = 16;
 
-var currentVersion = '1.0.2';
+var currentVersion = '1.1.0';
 var vsCodeExtensionDir: string = os.homedir() + '/.vscode/extensions';
 var codeSyncExtensionDir: string = vsCodeExtensionDir + '/golf1052.code-sync-' + currentVersion;
 var codeSyncDir: string;
@@ -62,6 +62,7 @@ export async function activate(context: vscode.ExtensionContext) {
         removeExcludedPackage(ExtensionLocation.External);
     });
 	
+    context.subscriptions.push(importExtensionsDisposable);
 	context.subscriptions.push(exportExtensionsDisposable);
 	context.subscriptions.push(listMissingInstalledDisposable);
 	context.subscriptions.push(listMissingExternalDisposable);
@@ -84,14 +85,12 @@ async function importExtensions() {
     let importedThings: string[] = [];
     for (let i: number = 0; i < missing.missing.length; i++) {
         if (excluded.indexOf(missing.missing[i].extension.id) == -1) {
-            if (missing.missing[i].extension.isTheme) {
-                await saveExtensionToInstalled(missing.missing[i].extension);
-                let name: string = missing.missing[i].extension.packageJSON.displayName;
-                if (!name) {
-                    name = missing.missing[i].extension.packageJSON.name;
-                }
-                importedThings.push(name);
+            await saveExtensionToInstalled(missing.missing[i].extension);
+            let name: string = missing.missing[i].extension.packageJSON.displayName;
+            if (!name) {
+                name = missing.missing[i].extension.packageJSON.name;
             }
+            importedThings.push(name);
         }
     }
     
@@ -424,12 +423,7 @@ async function getExternalExtensions(): Promise<ExternalExtension[]> {
 async function saveExtensionToInstalled(extension: ExternalExtension) {
     let installedExtensionsPath: string = vsCodeExtensionDir + '/' + extension.id + '-' + extension.version;
     if (await fs.exists(installedExtensionsPath) == false) {
-        if (extension.isTheme) {
-            await fs.makeDirectory(installedExtensionsPath);
-        }
-        else {
-            return;
-        }
+        await fs.makeDirectory(installedExtensionsPath);
     }
     let packageJSON: any = await tryGetPackageJson(installedExtensionsPath);
     if (packageJSON != null) {
@@ -437,19 +431,14 @@ async function saveExtensionToInstalled(extension: ExternalExtension) {
             return;
         }
     }
-    if (extension.isTheme) {
-        ncp(extension.extensionPath, installedExtensionsPath, function (err) {
-            if (err) {
-                console.log('Error while copying themes extension to installed: ' + err);
-            }
-            else {
-                console.log('Copying theme extension to installed completed successfully');
-            }
-        });
-    }
-    else {
-        // don't know if copying non theme extensions will work
-    }
+    ncp(extension.extensionPath, installedExtensionsPath, function (err) {
+        if (err) {
+            console.log('Error while copying themes extension to installed: ' + err);
+        }
+        else {
+            console.log('Copying theme extension to installed completed successfully');
+        }
+    });
 }
 
 async function saveExtensionToExternal(extension: vscode.Extension<any>) {
@@ -464,20 +453,14 @@ async function saveExtensionToExternal(extension: vscode.Extension<any>) {
 			return;
 		}
 	}
-	if (extension.packageJSON.contributes.themes) {
-		ncp(extension.extensionPath, externalExtensionPath, function (err) {
-			if (err) {
-				console.log('Error while copying themes extension to external: ' + err);
-			}
-			else {
-				console.log('Copying theme extension to external completed successfully');
-			}
-		});
-	}
-	else {
-		// just copy the package.json if it's something else
-		await fs.copyTree(extension.extensionPath + '/package.json', externalExtensionPath + '/package.json');
-	}
+    ncp(extension.extensionPath, externalExtensionPath, function (err) {
+        if (err) {
+            console.log('Error while copying themes extension to external: ' + err);
+        }
+        else {
+            console.log('Copying theme extension to external completed successfully');
+        }
+    });
 }
 
 class MissingExtension {

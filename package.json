@@ -2,7 +2,7 @@
 	"name": "code-sync",
 	"displayName": "CodeSync",
 	"description": "Sync VSCode extensions using your favorite file synchronization service (OneDrive, Dropbox, Google Drive, etc.)",
-	"version": "1.0.2",
+	"version": "1.1.0",
 	"publisher": "golf1052",
     "keywords": ["sync", "extension", "extensions", "codesync"],
     "icon": "images/logo.png",
