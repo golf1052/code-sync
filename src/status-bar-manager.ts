@@ -9,11 +9,14 @@ class StatusBarManager {
     private package: string = '$(package) ';
     private check: string = '$(check) ';
     private alert: string = '$(alert) ';
+    private stop: string = '$(stop) ';
     private sync: string = '$(sync) ';
     
     constructor() {
         this.statusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 0);
         this.icons = [];
+        this.statusBarText = '';
+        this.setCheck();
         this.show();
     }
     
@@ -30,8 +33,15 @@ class StatusBarManager {
     }
     
     set StatusBarText(text: string) {
-        this.statusBarText = text;
-        this.build();
+        if (this.statusBarText.toLowerCase().indexOf('restart') != -1) {
+            this.setTimer(() => {
+                this.statusBarText = text;
+            }, 5000);
+        }
+        else {
+            this.statusBarText = text;
+            this.build();
+        }
     }
     
     private build() {
@@ -50,16 +60,46 @@ class StatusBarManager {
     setCheck() {
         this.resetIcons();
         this.icons.push(this.check);
+        this.build();
     }
     
     setAlert() {
         this.resetIcons();
         this.icons.push(this.alert);
+        this.build();
+    }
+    
+    setStop() {
+        this.resetIcons();
+        this.icons.push(this.stop);
+        this.build();
     }
     
     setSync() {
         this.resetIcons();
         this.icons.push(this.sync);
+        this.build();
+    }
+    
+    setTimer(preFn: () => void, time: number, postFn?: () => void) {
+        let oldText = this.StatusBarText;
+        let oldIcons = this.icons;
+        preFn();
+        let self = this;
+        setTimeout((function () {
+            if (postFn) {
+                postFn();
+            }
+            else {
+                self.icons = oldIcons;
+                self.StatusBarText = oldText;
+            }
+        }), time);
+    }
+    
+    setGoodStatus() {
+        this.StatusBarText = 'CodeSync';
+        this.setCheck();
     }
 }
 

@@ -12,7 +12,6 @@ var vsCodeExtensionDir: string = os.homedir() + '/.vscode/extensions';
 var codeSyncExtensionDir: string = vsCodeExtensionDir + '/golf1052.code-sync-' + currentVersion;
 var codeSyncDir: string;
 var statusBarManager: StatusBarManager;
-var statusBarText: string;
 
 enum ExtensionLocation {
 	Installed,
@@ -25,6 +24,7 @@ export async function activate(context: vscode.ExtensionContext) {
     statusBarManager = new StatusBarManager();
 	await checkForSettings();
     await importExtensions();
+    
     
     let importExtensionsDisposable = vscode.commands.registerCommand('extension.importExtensions', async function() {
         await importExtensions();
@@ -82,7 +82,8 @@ export async function deactivate() {
 }
 
 async function importExtensions() {
-    vscode.window.showInformationMessage('CodeSync: Importing extensions...please note that CodeSync currently only automatically imports themes!');
+    statusBarManager.StatusBarText = 'CodeSync: Importing extensions';
+    statusBarManager.setSync();
     let missing: any = await getMissingPackagesFrom(ExtensionLocation.Installed);
     let excluded: string[] = await getExcludedPackages(ExtensionLocation.External);
     let importedThings: string[] = [];
@@ -104,12 +105,15 @@ async function importExtensions() {
         for (let i: number = 0; i < importedThings.length; i++) {
             vscode.window.showInformationMessage(importedThings[i]);
         }
-        vscode.window.showInformationMessage('Please restart Visual Studio Code to enable imported extensions!');
+        statusBarManager.StatusBarText = 'CodeSync: Restart required!';
+        statusBarManager.setStop();
     }
     displayMissingPackages(await getMissingPackagesFrom(ExtensionLocation.Installed));
 }
 
 async function exportExtensions() {
+    statusBarManager.StatusBarText = 'CodeSync: Exporting extensions';
+    statusBarManager.setSync();
     let missing: any = await getMissingPackagesFrom(ExtensionLocation.External);
     let excluded: string[] = await getExcludedPackages(ExtensionLocation.Installed);
     let importedThings: string[] = [];
@@ -123,6 +127,7 @@ async function exportExtensions() {
             importedThings.push(name);
         }
     }
+    await removeExternalExtensionDuplicates();
     await cleanExternalExtensions();
     
     if (importedThings.length > 0) {
@@ -145,6 +150,7 @@ async function saveSettings(settings: any) {
 }
 
 async function checkForSettings() {
+    statusBarManager.StatusBarText = 'CodeSync: Checking settingss';
 	if (await fs.exists(codeSyncExtensionDir) == false) {
 		await fs.makeDirectory(codeSyncExtensionDir);
 	}
@@ -181,8 +187,6 @@ async function checkForSettings() {
     if (await fs.exists(codeSyncDir) == false) {
         await fs.makeDirectory(codeSyncDir);
     }
-    statusBarManager.StatusBarText = 'CodeSync';
-    statusBarManager.setCheck();
 }
 
 async function getExcludedPackages(location: ExtensionLocation): Promise<string[]> {
@@ -307,17 +311,27 @@ async function displayExcludedPackages(location: ExtensionLocation) {
 function displayMissingPackages(m: any) {
     if (m.missing.length == 0) {
         if (m.which == ExtensionLocation.Installed) {
-            vscode.window.showInformationMessage('No extensions missing from local.');
+            statusBarManager.setTimer(() => {
+                statusBarManager.StatusBarText = 'CodeSync: No extensions missing from local';
+                statusBarManager.setCheck();
+            }, 5000, statusBarSetGoodStatus);
         }
         else if (m.which == ExtensionLocation.External) {
-            vscode.window.showInformationMessage('No extensions missing from external.');
+            statusBarManager.setTimer(() => {
+                statusBarManager.StatusBarText = 'CodeSync: No extensions missing from external';
+                statusBarManager.setCheck();
+            }, 5000, statusBarSetGoodStatus);
         }
     }
     else {
         if (m.which == ExtensionLocation.External) {
+            statusBarManager.StatusBarText = 'CodeSync: Extensions missing from external';
+            statusBarManager.setAlert();
             vscode.window.showInformationMessage('Extensions missing from external:');
         }
         else if (m.which == ExtensionLocation.Installed) {
+            statusBarManager.StatusBarText = 'CodeSync: Extensions missing from installed';
+            statusBarManager.setAlert();
             vscode.window.showInformationMessage('Extensions missing from installed:');
         }
         for (let i = 0; i < m.missing.length; i++) {
@@ -333,6 +347,11 @@ function displayMissingPackages(m: any) {
             }
         }
     }
+}
+
+function statusBarSetGoodStatus() {
+    statusBarManager.StatusBarText = 'CodeSync';
+    statusBarManager.setCheck();
 }
 
 function getInstalledExtensions(): vscode.Extension<any>[] {
@@ -373,7 +392,7 @@ function getFolderExtensionInfo(folderName: string): FolderExtension {
     };
 }
 
-async function cleanExternalExtensions() {
+async function removeExternalExtensionDuplicates() {
     let folders: string[] = await fs.list(codeSyncDir);
     let extensions: any[] = [];
     let markedForDeath: string[] = [];
@@ -414,8 +433,52 @@ async function cleanExternalExtensions() {
     }
 }
 
+async function cleanExternalExtensions() {
+    let folders: string[] = await fs.list(codeSyncDir);
+    let markedForDeath: string[] = [];
+    let extensions: vscode.Extension<any>[] = getInstalledExtensions();
+    
+    for (let i: number = 0; i < folders.length; i++) {
+        let tmpExtension: FolderExtension = getFolderExtensionInfo(folders[i]);
+        let packageJSON = await tryGetPackageJson(codeSyncDir + '/' + folders[i]);
+        let foundPackage: boolean = false;
+        for (let j: number = 0; j < extensions.length; j++) {
+            if (packageJSON != null) {
+                if (extensions[j].id == packageJSON.publisher + '.' + packageJSON.name &&
+                extensions[j].packageJSON.version == packageJSON.version) {
+                    foundPackage = true;
+                    break;
+                }
+            }
+            else {
+                if (tmpExtension.version != '') {
+                    if (extensions[j].id == tmpExtension.id &&
+                    extensions[j].packageJSON.version == tmpExtension.version) {
+                        foundPackage = true;
+                        break;
+                    }
+                }
+                else {
+                    if (extensions[j].id == tmpExtension.id) {
+                        foundPackage = true;
+                        break;
+                    }
+                }
+            }
+        }
+        
+        if (!foundPackage) {
+            markedForDeath.push(folders[i]);
+        }
+    }
+    
+    for (let i: number = 0; i < markedForDeath.length; i++) {
+        await fs.removeTree(codeSyncDir + '/' + markedForDeath[i]);
+    }
+}
+
 async function getExternalExtensions(): Promise<ExternalExtension[]> {
-    await cleanExternalExtensions();
+    await removeExternalExtensionDuplicates();
 	let folders: string[] = await fs.list(codeSyncDir);
 	let externalExtensions: ExternalExtension[] = [];
 	for (let i = 0; i < folders.length; i++) {
