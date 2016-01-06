@@ -1,6 +1,7 @@
 "use strict";
 import * as vscode from 'vscode';
 import * as helpers from '../src/helpers';
+import StatusBarManager = require('./status-bar-manager');
 var os = require('os');
 var fs = require('q-io/fs');
 var ncp = require('ncp').ncp;
@@ -10,7 +11,7 @@ var currentVersion = '1.1.0';
 var vsCodeExtensionDir: string = os.homedir() + '/.vscode/extensions';
 var codeSyncExtensionDir: string = vsCodeExtensionDir + '/golf1052.code-sync-' + currentVersion;
 var codeSyncDir: string;
-var statusBar: vscode.StatusBarItem;
+var statusBarManager: StatusBarManager;
 var statusBarText: string;
 
 enum ExtensionLocation {
@@ -20,10 +21,10 @@ enum ExtensionLocation {
 
 export async function activate(context: vscode.ExtensionContext) {
 	console.log('Congratulations, your extension "code-sync" is now active!');
-		
+    
+    statusBarManager = new StatusBarManager();
 	await checkForSettings();
     await importExtensions();
-    createStatusBar();
     
     let importExtensionsDisposable = vscode.commands.registerCommand('extension.importExtensions', async function() {
         await importExtensions();
@@ -180,17 +181,8 @@ async function checkForSettings() {
     if (await fs.exists(codeSyncDir) == false) {
         await fs.makeDirectory(codeSyncDir);
     }
-}
-
-function createStatusBar() {
-    statusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 0);
-    statusBar.show();
-    statusBar.text = '$(package) $(check) CodeSync';
-}
-
-function setStatusBarText(text: string) {
-    statusBarText = text;
-    statusBar.text = ''
+    statusBarManager.StatusBarText = 'CodeSync';
+    statusBarManager.setCheck();
 }
 
 async function getExcludedPackages(location: ExtensionLocation): Promise<string[]> {
