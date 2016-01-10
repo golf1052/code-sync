@@ -118,6 +118,7 @@ async function exportExtensions() {
             importedThings.push(name);
         }
     }
+    await removeExternalExtensionDuplicates();
     await cleanExternalExtensions();
     
     if (importedThings.length > 0) {
@@ -366,7 +367,7 @@ function getFolderExtensionInfo(folderName: string): FolderExtension {
     };
 }
 
-async function cleanExternalExtensions() {
+async function removeExternalExtensionDuplicates() {
     let folders: string[] = await fs.list(codeSyncDir);
     let extensions: any[] = [];
     let markedForDeath: string[] = [];
@@ -407,8 +408,46 @@ async function cleanExternalExtensions() {
     }
 }
 
+async function cleanExternalExtensions() {
+    let folders: string[] = await fs.list(codeSyncDir);
+    let markedForDeath: string[] = [];
+    let extensions: vscode.Extension<any>[] = getInstalledExtensions();
+    
+    for (let i: number = 0; i < folders.length; i++) {
+        let tmpExtension: FolderExtension = getFolderExtensionInfo(folders[i]);
+        let packageJSON = await tryGetPackageJson(codeSyncDir + '/' + folders[i]);
+        let foundPackage: boolean = false;
+        for (let j: number = 0; j < extensions.length; j++) {
+            if (packageJSON != null) {
+                if (extensions[j].id == packageJSON.publisher + '.' + packageJSON.name &&
+                helpers.isVersionGreaterThan(extensions[j].packageJSON.version, packageJSON.version) == 1) {
+                    foundPackage = true;
+                    break;
+                }
+            }
+            else {
+                if (tmpExtension.version != '') {
+                    if (extensions[j].id == tmpExtension.id &&
+                    helpers.isVersionGreaterThan(extensions[j].packageJSON.version, tmpExtension.version) == 1) {
+                        foundPackage = true;
+                        break;
+                    }
+                }
+            }
+        }
+        
+        if (!foundPackage) {
+            markedForDeath.push(folders[i]);
+        }
+    }
+    
+    for (let i: number = 0; i < markedForDeath.length; i++) {
+        await fs.removeTree(codeSyncDir + '/' + markedForDeath[i]);
+    }
+}
+
 async function getExternalExtensions(): Promise<ExternalExtension[]> {
-    await cleanExternalExtensions();
+    await removeExternalExtensionDuplicates();
 	let folders: string[] = await fs.list(codeSyncDir);
 	let externalExtensions: ExternalExtension[] = [];
 	for (let i = 0; i < folders.length; i++) {
