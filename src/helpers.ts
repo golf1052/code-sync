@@ -1,5 +1,8 @@
 "use strict"
 
+var fs = require('q-io/fs');
+var os = require('os');
+
 export function isVersionGreaterThan(a: string, b: string): number {
     if (a === b) {
         return 0;
@@ -55,4 +58,30 @@ export function isVersionGreaterThan(a: string, b: string): number {
         }
         return 0;
     }
+}
+
+export async function makeSureDirectoryExists(path: string) {
+    if (await fs.exists(path) == false) {
+        await fs.makeDirectory(path);
+    }
+}
+
+export async function getSettings(path: string): Promise<any> {
+    return JSON.parse(await fs.read(path + '/settings.json'));
+}
+
+export async function saveSettings(path: string, settings: any) {
+    await fs.write(path + '/settings.json', JSON.stringify(settings, null, 4));
+}
+
+export async function deleteDirectory(path: string) {
+    await fs.removeTree(path);
+}
+
+export function getHomeDirectory(): string {
+    return os.homedir();
+}
+
+export async function setUpTest() {
+    getHomeDirectory
 }

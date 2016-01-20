@@ -36,7 +36,7 @@ class StatusBarManager {
         if (this.statusBarText.toLowerCase().indexOf('restart') != -1) {
             this.setTimer(() => {
                 this.statusBarText = text;
-            }, 5000);
+            }, 10000);
         }
         else {
             this.statusBarText = text;
@@ -95,11 +95,6 @@ class StatusBarManager {
                 self.StatusBarText = oldText;
             }
         }), time);
-    }
-    
-    setGoodStatus() {
-        this.StatusBarText = 'CodeSync';
-        this.setCheck();
     }
 }
 
