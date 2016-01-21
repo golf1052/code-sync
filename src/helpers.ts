@@ -1,7 +1,7 @@
 "use strict"
 
-var fs = require('q-io/fs');
-var os = require('os');
+import * as fs from 'q-io/fs';
+import * as os from 'os';
 
 export function isVersionGreaterThan(a: string, b: string): number {
     if (a === b) {
@@ -75,13 +75,11 @@ export async function saveSettings(path: string, settings: any) {
 }
 
 export async function deleteDirectory(path: string) {
-    await fs.removeTree(path);
+    if (await fs.exists(path) == true) {
+        await fs.removeTree(path);
+    }
 }
 
 export function getHomeDirectory(): string {
     return os.homedir();
-}
-
-export async function setUpTest() {
-    getHomeDirectory
 }

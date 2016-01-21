@@ -13,13 +13,15 @@ import * as assert from 'assert';
 import * as vscode from 'vscode';
 import * as codesync from '../src/codesync';
 import * as helpers from '../src/helpers';
+import * as fs from 'q-io/fs';
 
-var currentVersion = '1.1.0';
+var currentVersion: string = '1.1.0';
 var vsCodeExtensionDir: string = helpers.getHomeDirectory() + '/.vscode/extensions';
 var codeSyncExtensionDir: string = helpers.getHomeDirectory() + '/Desktop/golf1052.code-sync-' + currentVersion;
+var codeSyncSyncDir: string = helpers.getHomeDirectory() + '/Desktop/code-sync';
 
 // Defines a Mocha test suite to group tests of similar kind together
-suite("Extension Tests", () => {
+suite("Helper Tests", () => {
     test('isVersionGreaterThanTests', () => {
         assert.equal(0, helpers.isVersionGreaterThan(null, null));
         assert.equal(-1, helpers.isVersionGreaterThan(null, ''));
@@ -34,11 +36,19 @@ suite("Extension Tests", () => {
     });
 });
 
-function setUpTest() {
-    var codeSync: codesync.CodeSync = new codesync.CodeSync(currentVersion, vsCodeExtensionDir, codeSyncExtensionDir);
-    return codesync;
-}
-
-async function destroyTest() {
-    await helpers.deleteDirectory(codeSyncExtensionDir);
-}
+suite('CodeSync Tests', function() {
+    let codeSync: codesync.CodeSync;
+    setup(async function() {
+        codeSync = new codesync.CodeSync(currentVersion, vsCodeExtensionDir, codeSyncExtensionDir, codeSyncSyncDir);
+        await codeSync.checkForSettings();
+    });
+    
+    test('test', function() {
+        assert.equal(true, true);
+    });
+    
+    teardown(async function() {
+        await helpers.deleteDirectory(codeSyncExtensionDir);
+        await helpers.deleteDirectory(codeSyncSyncDir);
+    });
+});

@@ -80,7 +80,7 @@
 		"compile": "node ./node_modules/vscode/bin/compile -watch -p ./"
 	},
     "dependencies": {
-        "ncp": "^2.0.0",
+        "recusive-copy": "^2.0.2",
         "q-io": "^1.13.2"
     },
 	"devDependencies": {

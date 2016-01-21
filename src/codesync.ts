@@ -2,10 +2,9 @@
 import * as vscode from 'vscode';
 import * as helpers from '../src/helpers';
 import StatusBarManager = require('./status-bar-manager');
-var os = require('os');
-var fs = require('q-io/fs');
-var ncp = require('ncp').ncp;
-ncp.limit = 16;
+import * as os from 'os';
+import * as fs from 'q-io/fs';
+var copy = require('recursive-copy');
 
 export enum ExtensionLocation {
     Installed,
@@ -41,10 +40,11 @@ export class CodeSync {
     private codeSyncDir: string;
     private statusBarManager: StatusBarManager;
     
-    constructor(currentVersion: string, vsCodeExtensionDir: string, codeSyncExtensionDir: string) {
+    constructor(currentVersion: string, vsCodeExtensionDir: string, codeSyncExtensionDir: string, codeSyncDir: string) {
         this.currentVersion = currentVersion;
         this.vsCodeExtensionDir = vsCodeExtensionDir;
         this.codeSyncExtensionDir = codeSyncExtensionDir;
+        this.codeSyncDir = codeSyncDir;
         this.statusBarManager = new StatusBarManager();
     }
     
@@ -127,10 +127,17 @@ export class CodeSync {
             }
         }
         if (await fs.exists(this.codeSyncExtensionDir + '/settings.json') == false) {
-            let path: string = await vscode.window.showInputBox({
-                prompt: 'Enter the full path to where you want CodeSync to sync your extensions',
-                value: os.homedir() + '/OneDrive/Apps/code-sync'
-            });
+            let path: string = null;
+            if (this.codeSyncDir == null) {
+                path = await vscode.window.showInputBox({
+                    prompt: 'Enter the full path to where you want CodeSync to sync your extensions',
+                    value: os.homedir() + '/OneDrive/Apps/code-sync'
+                });
+            }
+            else {
+                path = this.codeSyncDir;
+            }
+            
             let tmpSettings = {
                 externalPath: path,
                 excluded: {
@@ -145,7 +152,7 @@ export class CodeSync {
         this.codeSyncDir = settings.externalPath;
         
         if (await fs.exists(this.codeSyncDir) == false) {
-            await fs.makeDirectory(this.codeSyncDir);
+            await fs.makeTree(this.codeSyncDir);
         }
     }
     
@@ -260,7 +267,7 @@ export class CodeSync {
         let installedExtensionsPath: string = this.vsCodeExtensionDir + '/' + extension.id + '-' + extension.version;
         if (await fs.exists(installedExtensionsPath) == false) {
             if (extension.isTheme) {
-                await fs.makeDirectory(installedExtensionsPath);
+                await fs.makeTree(installedExtensionsPath);
             }
             else {
                 return;
@@ -273,14 +280,7 @@ export class CodeSync {
             }
         }
         if (extension.isTheme) {
-            ncp(extension.extensionPath, installedExtensionsPath, function (err) {
-                if (err) {
-                    console.log('Error while copying themes extension to installed: ' + err);
-                }
-                else {
-                    console.log('Copying theme extension to installed completed successfully');
-                }
-            });
+            await copy(extension.extensionPath, installedExtensionsPath);
         }
         else {
             // don't know if copying non theme extensions will work
@@ -290,7 +290,7 @@ export class CodeSync {
     async saveExtensionToExternal(extension: vscode.Extension<any>) {
         let externalExtensionPath: string = this.codeSyncDir + '/' + extension.id + '-' + extension.packageJSON.version;
         if (await fs.exists(externalExtensionPath) == false) {
-            await fs.makeDirectory(externalExtensionPath);
+            await fs.makeTree(externalExtensionPath);
         }
         let externalPackageInfo = await this.tryGetPackageJson(externalExtensionPath);
         if (externalPackageInfo != null) {
@@ -300,14 +300,7 @@ export class CodeSync {
             }
         }
         if (extension.packageJSON.contributes.themes) {
-            ncp(extension.extensionPath, externalExtensionPath, function (err) {
-                if (err) {
-                    console.log('Error while copying themes extension to external: ' + err);
-                }
-                else {
-                    console.log('Copying theme extension to external completed successfully');
-                }
-            });
+            await copy(extension.extensionPath, externalExtensionPath);
         }
         else {
             // just copy the package.json if it's something else

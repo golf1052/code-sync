@@ -3,10 +3,7 @@ import * as vscode from 'vscode';
 import * as codesync from './codesync';
 import * as helpers from '../src/helpers';
 import StatusBarManager = require('./status-bar-manager');
-var os = require('os');
-var fs = require('q-io/fs');
-var ncp = require('ncp').ncp;
-ncp.limit = 16;
+import * as os from 'os';
 
 var currentVersion = '1.1.0';
 var vsCodeExtensionDir: string = os.homedir() + '/.vscode/extensions';
@@ -21,7 +18,7 @@ enum ExtensionLocation {
 export async function activate(context: vscode.ExtensionContext) {
 	console.log('Congratulations, your extension "code-sync" is now active!');
     
-    codeSync = new codesync.CodeSync(currentVersion, vsCodeExtensionDir, codeSyncExtensionDir);
+    codeSync = new codesync.CodeSync(currentVersion, vsCodeExtensionDir, codeSyncExtensionDir, null);
 	await codeSync.checkForSettings();
     await codeSync.importExtensions();
     
@@ -79,5 +76,5 @@ export async function activate(context: vscode.ExtensionContext) {
 }
 
 export async function deactivate() {
-    await codeSync.exportExtensions();
+    // await codeSync.exportExtensions();
 }
