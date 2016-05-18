@@ -2,7 +2,7 @@
 	"name": "code-sync",
 	"displayName": "CodeSync",
 	"description": "Sync VSCode extensions using your favorite file synchronization service (OneDrive, Dropbox, Google Drive, etc.)",
-	"version": "1.0.2",
+	"version": "1.1.0",
 	"publisher": "golf1052",
     "keywords": ["sync", "extension", "extensions", "codesync"],
     "icon": "images/logo.png",
@@ -22,7 +22,7 @@
         "theme": "light"
     },
 	"engines": {
-		"vscode": "^0.10.1"
+		"vscode": "^1.0.0"
 	},
 	"categories": [
 		"Other"
@@ -77,14 +77,16 @@
 	},
 	"scripts": {
 		"vscode:prepublish": "node ./node_modules/vscode/bin/compile",
-		"compile": "node ./node_modules/vscode/bin/compile -watch -p ./"
+		"compile": "node ./node_modules/vscode/bin/compile -watch -p ./",
+        "postinstall": "node ./node_modules/vscode/bin/install"
 	},
     "dependencies": {
-        "ncp": "^2.0.0",
+        "recursive-copy": "^2.0.5",
         "q-io": "^1.13.2"
     },
 	"devDependencies": {
-		"typescript": "^1.7.3",
-		"vscode": "0.10.x"
+		"typescript": "^1.8.5",
+		"vscode": "^0.11.0",
+        "typings": "^1.0.4"
 	}
 }

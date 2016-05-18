@@ -1,4 +1,6 @@
-"use strict"
+'use strict'
+import * as fs from 'q-io/fs';
+import * as os from 'os';
 
 export function isVersionGreaterThan(a: string, b: string): number {
     if (a === b) {
@@ -55,4 +57,28 @@ export function isVersionGreaterThan(a: string, b: string): number {
         }
         return 0;
     }
+}
+
+export async function makeSureDirectoryExists(path: string) {
+    if (await fs.exists(path) == false) {
+        await fs.makeDirectory(path);
+    }
+}
+
+export async function getSettings(path: string): Promise<any> {
+    return JSON.parse(await fs.read(path + '/settings.json'));
+}
+
+export async function saveSettings(path: string, settings: any) {
+    await fs.write(path + '/settings.json', JSON.stringify(settings, null, 4));
+}
+
+export async function deleteDirectory(path: string) {
+    if (await fs.exists(path) == true) {
+        await fs.removeTree(path);
+    }
+}
+
+export function getHomeDirectory(): string {
+    return os.homedir();
 }

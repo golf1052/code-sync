@@ -1,0 +1,4 @@
+{
+    "quotemark": [true, "single", "avoid-escape"],
+    "semicolon": "always"
+}
