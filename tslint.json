@@ -1,4 +1,6 @@
 {
-    "quotemark": [true, "single", "avoid-escape"],
-    "semicolon": "always"
+    "rules": {
+        "quotemark": [true, "single", "avoid-escape"],
+        "semicolon": [true, "always"]
+    }
 }

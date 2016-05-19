@@ -1,4 +1,4 @@
-'use strict'
+'use strict';
 import * as fs from 'q-io/fs';
 import * as os from 'os';
 
@@ -81,4 +81,8 @@ export async function deleteDirectory(path: string) {
 
 export function getHomeDirectory(): string {
     return os.homedir();
+}
+
+export function createPackageFolderName(publisher: string, name: string, version: string): string {
+    return `${publisher}.${name}-${version}`;
 }

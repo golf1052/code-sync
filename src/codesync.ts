@@ -1,4 +1,4 @@
-'use strict'
+'use strict';
 import * as vscode from 'vscode';
 import * as helpers from './helpers';
 import {StatusBarManager} from './status-bar-manager';
@@ -12,8 +12,8 @@ export enum ExtensionLocation {
 }
 
 export interface FolderExtension {
-    id: string,
-    version: string
+    id: string;
+    version: string;
 }
 
 export class ExternalExtension {
@@ -250,7 +250,7 @@ export class CodeSync {
     async displayExcludedPackages(location: ExtensionLocation) {
         let excluded: string[] = await this.getExcludedPackages(location);
         if (location == ExtensionLocation.Installed) {
-            vscode.window.showInformationMessage('Excluded installed packages:')
+            vscode.window.showInformationMessage('Excluded installed packages:');
             for (let i: number = 0; i < excluded.length; i++) {
                 vscode.window.showInformationMessage(excluded[i]);
             }

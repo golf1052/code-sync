@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 import * as vscode from 'vscode';
 import * as codesync from './codesync';
 import * as helpers from './helpers';
