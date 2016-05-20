@@ -20,6 +20,10 @@ var vsCodeExtensionDir: string = helpers.getHomeDirectory() + '/.vscode/extensio
 var codeSyncExtensionDir: string = helpers.getHomeDirectory() + '/Desktop/golf1052.code-sync-' + currentVersion;
 var codeSyncSyncDir: string = helpers.getHomeDirectory() + '/Desktop/code-sync';
 
+function setupCodeSync(): codesync.CodeSync {
+    return new codesync.CodeSync(currentVersion, vsCodeExtensionDir, codeSyncExtensionDir, codeSyncSyncDir);
+}
+
 // Defines a Mocha test suite to group tests of similar kind together
 suite('Extension Tests', () => {
     test('isVersionGreaterThanTests', () => {
@@ -36,28 +40,36 @@ suite('Extension Tests', () => {
     });
 });
 
+suite('getInstalledExtensions', function() {
+    let codeSync: codesync.CodeSync;
+    let testHelper: testHelpers.TestHelper;
+});
+
 suite('CodeSync Tests', function() {
     let codeSync: codesync.CodeSync;
     let testHelper: testHelpers.TestHelper;
     setup(async function() {
         testHelper = new testHelpers.TestHelper();
-        codeSync = new codesync.CodeSync(currentVersion, vsCodeExtensionDir, codeSyncExtensionDir, codeSyncSyncDir);
+        codeSync = setupCodeSync();
         await codeSync.checkForSettings();
         testHelper.CreatedFolders.push(codeSyncExtensionDir);
         testHelper.CreatedFolders.push(codeSyncSyncDir);
     });
     
     test('checkForSettings', async function() {
+        let extensions: vscode.Extension<any>[] = vscode.extensions.all;
         let settings = await helpers.getSettings(codeSyncExtensionDir);
-        console.log(settings);
         assert.equal(codeSyncSyncDir, settings.externalPath);
         
         let fakePackageJson: any = testHelpers.createFakePackage();
-        let fakePackageFolder: string = vsCodeExtensionDir + '/' + helpers.createPackageFolderName(fakePackageJson.publisher, fakePackageJson.name, fakePackageJson.version);
+        let fakePackageFolderName = helpers.createPackageFolderName(fakePackageJson.publisher, fakePackageJson.name, fakePackageJson.version);
+        let fakePackageFolder: string = codeSyncSyncDir + '/' + fakePackageFolderName;
         await helpers.makeSureDirectoryExists(fakePackageFolder);
         testHelper.CreatedFolders.push(fakePackageFolder);
         await fs.write(fakePackageFolder + '/package.json', JSON.stringify(fakePackageJson, null, 4));
-        console.log('done');
+        await codeSync.importExtensions();
+        assert.equal(true, await fs.exists(vsCodeExtensionDir + '/' + fakePackageFolderName));
+        assert.equal(true, await fs.exists(vsCodeExtensionDir + '/' + fakePackageFolderName + '/package.json'));
     });
     
     teardown(async function() {

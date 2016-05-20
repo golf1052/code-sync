@@ -465,10 +465,8 @@ export class CodeSync {
     
     getInstalledExtensions(): vscode.Extension<any>[] {
         let extensions: vscode.Extension<any>[] = [];
-        vscode.extensions.all.forEach(extention => {
-            if (extention.extensionPath.startsWith(os.homedir())) {
-                extensions.push(extention);
-            }
+        extensions = vscode.extensions.all.filter(function (extension: any) {
+            return extension.extensionPath.startsWith(os.homedir());
         });
         return extensions;
     }
@@ -590,12 +588,18 @@ export class CodeSync {
             e.extensionPath = path;
             e.id = e.packageJSON.publisher + '.' + e.packageJSON.name;
             e.version = e.packageJSON.version;
-            if (e.packageJSON.contributes.themes) {
+            if (e.packageJSON.contributes) {
+                if (e.packageJSON.contributes.themes) {
                 e.isTheme = true;
+                }
+                else {
+                    e.isTheme = false;
+                }
             }
             else {
                 e.isTheme = false;
             }
+            
             return e;
         }
         else {
