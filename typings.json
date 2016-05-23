@@ -1,6 +1,2 @@
 {
-  "globalDependencies": {
-    "node": "registry:dt/node#6.0.0+20160514165920",
-    "q-io": "registry:dt/q-io#0.0.0+20160317120654"
-  }
 }

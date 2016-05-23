@@ -1,5 +1,5 @@
 'use strict';
-import * as fs from 'q-io/fs';
+var fs = require('q-io/fs');
 import * as os from 'os';
 
 export function isVersionGreaterThan(a: string, b: string): number {

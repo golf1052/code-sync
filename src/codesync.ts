@@ -3,7 +3,7 @@ import * as vscode from 'vscode';
 import * as helpers from './helpers';
 import {StatusBarManager} from './status-bar-manager';
 import * as os from 'os';
-import * as fs from 'q-io/fs';
+var fs = require('q-io/fs');
 var copy = require('recursive-copy');
 
 export enum ExtensionLocation {
@@ -320,6 +320,11 @@ export class CodeSync {
         return value;
     }
     
+    /**
+     * Given publisher.name-version returns a FolderExtension object with id = publisher.name and
+     * version = version. If the folderName is malformed then id = folderName and version will be
+     * an empty string
+     */
     getFolderExtensionInfo(folderName: string): FolderExtension {
         let id: string = '';
         let version: string = '';

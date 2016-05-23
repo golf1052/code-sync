@@ -13,7 +13,7 @@ import * as vscode from 'vscode';
 import * as codesync from '../src/codesync';
 import * as helpers from '../src/helpers';
 import * as testHelpers from './test-helpers';
-import * as fs from 'q-io/fs';
+var fs = require('q-io/fs');
 
 var currentVersion: string = '1.1.0';
 var vsCodeExtensionDir: string = helpers.getHomeDirectory() + '/.vscode/extensions';
@@ -40,36 +40,56 @@ suite('Extension Tests', () => {
     });
 });
 
-suite('getInstalledExtensions', function() {
+suite('CodeSync Tests', function() {
     let codeSync: codesync.CodeSync;
     let testHelper: testHelpers.TestHelper;
+    setup (async function () {
+        testHelper = new testHelpers.TestHelper();
+        codeSync = setupCodeSync();
+    });
+    
+    test('getInstalledExtensions', async function() {
+        let installedExtensions: vscode.Extension<any>[] = codeSync.getInstalledExtensions();
+        assert.notEqual(null, installedExtensions);
+    });
+    
+    test('getFolderExtensionInfo', function () {
+        let goodFolderName: string = 'golf1052.test-1.0.0';
+        let goodFolderExtension: codesync.FolderExtension = codeSync.getFolderExtensionInfo(goodFolderName);
+        assert.equal('golf1052.test', goodFolderExtension.id);
+        assert.equal('1.0.0', goodFolderExtension.version);
+        let badFolderName: string = 'test';
+        let badFolderExtension: codesync.FolderExtension = codeSync.getFolderExtensionInfo(badFolderName);
+        assert.equal('test', badFolderExtension.id);
+        assert.equal('', badFolderExtension.version);
+    });
 });
 
-suite('CodeSync Tests', function() {
+suite('Remove external extension duplicates', function () {
     let codeSync: codesync.CodeSync;
     let testHelper: testHelpers.TestHelper;
     setup(async function() {
         testHelper = new testHelpers.TestHelper();
         codeSync = setupCodeSync();
         await codeSync.checkForSettings();
-        testHelper.CreatedFolders.push(codeSyncExtensionDir);
-        testHelper.CreatedFolders.push(codeSyncSyncDir);
+        testHelper.CreatedFolders.push(codeSyncExtensionDir, codeSyncSyncDir);
     });
     
-    test('checkForSettings', async function() {
-        let extensions: vscode.Extension<any>[] = vscode.extensions.all;
-        let settings = await helpers.getSettings(codeSyncExtensionDir);
-        assert.equal(codeSyncSyncDir, settings.externalPath);
-        
-        let fakePackageJson: any = testHelpers.createFakePackage();
-        let fakePackageFolderName = helpers.createPackageFolderName(fakePackageJson.publisher, fakePackageJson.name, fakePackageJson.version);
-        let fakePackageFolder: string = codeSyncSyncDir + '/' + fakePackageFolderName;
-        await helpers.makeSureDirectoryExists(fakePackageFolder);
-        testHelper.CreatedFolders.push(fakePackageFolder);
-        await fs.write(fakePackageFolder + '/package.json', JSON.stringify(fakePackageJson, null, 4));
-        await codeSync.importExtensions();
-        assert.equal(true, await fs.exists(vsCodeExtensionDir + '/' + fakePackageFolderName));
-        assert.equal(true, await fs.exists(vsCodeExtensionDir + '/' + fakePackageFolderName + '/package.json'));
+    test('removeExternalExtensionDuplicates', async function() {
+        let fakePackage1FolderName: string = helpers.createPackageFolderName('golf1052', 'test', '1.0.0');
+        let fakePackage1Folder: string = codeSyncSyncDir + '/' + fakePackage1FolderName;
+        let fakePackage2FolerName: string = helpers.createPackageFolderName('golf1052', 'test', '2.0.0');
+        let fakePackage2Folder: string = codeSyncSyncDir + '/' + fakePackage2FolerName;
+        await helpers.makeSureDirectoryExists(fakePackage1Folder);
+        await helpers.makeSureDirectoryExists(fakePackage2Folder);
+        testHelper.CreatedFolders.push(fakePackage1Folder, fakePackage2Folder);
+        let externalExtensions: string[] = await fs.list(codeSyncSyncDir);
+        assert.equal(2, externalExtensions.length);
+        await codeSync.removeExternalExtensionDuplicates();
+        externalExtensions = await fs.list(codeSyncSyncDir);
+        assert.equal(1, externalExtensions.length);
+        let externalExtensionInfo: codesync.FolderExtension = codeSync.getFolderExtensionInfo(externalExtensions[0]);
+        assert.equal('2.0.0', externalExtensionInfo.version);
     });
     
     teardown(async function() {
@@ -78,3 +98,40 @@ suite('CodeSync Tests', function() {
         }
     });
 });
+
+// suite('getExternalExtensions', function () {
+    
+// });
+
+// suite('CodeSync Tests', function() {
+//     let codeSync: codesync.CodeSync;
+//     let testHelper: testHelpers.TestHelper;
+//     setup(async function() {
+//         testHelper = new testHelpers.TestHelper();
+//         codeSync = setupCodeSync();
+//         await codeSync.checkForSettings();
+//         testHelper.CreatedFolders.push(codeSyncExtensionDir, codeSyncSyncDir);
+//     });
+    
+//     test('checkForSettings', async function() {
+//         let extensions: vscode.Extension<any>[] = vscode.extensions.all;
+//         let settings = await helpers.getSettings(codeSyncExtensionDir);
+//         assert.equal(codeSyncSyncDir, settings.externalPath);
+        
+//         let fakePackageJson: any = testHelpers.createFakePackage();
+//         let fakePackageFolderName = helpers.createPackageFolderName(fakePackageJson.publisher, fakePackageJson.name, fakePackageJson.version);
+//         let fakePackageFolder: string = codeSyncSyncDir + '/' + fakePackageFolderName;
+//         await helpers.makeSureDirectoryExists(fakePackageFolder);
+//         testHelper.CreatedFolders.push(fakePackageFolder);
+//         await fs.write(fakePackageFolder + '/package.json', JSON.stringify(fakePackageJson, null, 4));
+//         await codeSync.importExtensions();
+//         assert.equal(true, await fs.exists(vsCodeExtensionDir + '/' + fakePackageFolderName));
+//         assert.equal(true, await fs.exists(vsCodeExtensionDir + '/' + fakePackageFolderName + '/package.json'));
+//     });
+    
+//     teardown(async function() {
+//         for (let folder of testHelper.CreatedFolders) {
+//             await helpers.deleteDirectory(folder);
+//         }
+//     });
+// });
