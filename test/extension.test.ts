@@ -24,19 +24,18 @@ function setupCodeSync(): codesync.CodeSync {
     return new codesync.CodeSync(currentVersion, vsCodeExtensionDir, codeSyncExtensionDir, codeSyncSyncDir);
 }
 
-// Defines a Mocha test suite to group tests of similar kind together
 suite('Extension Tests', () => {
     test('isVersionGreaterThanTests', () => {
-        assert.equal(0, helpers.isVersionGreaterThan(null, null));
-        assert.equal(-1, helpers.isVersionGreaterThan(null, ''));
-        assert.equal(1, helpers.isVersionGreaterThan('', null));
-        assert.equal(0, helpers.isVersionGreaterThan('0.0.0', '0.0.0'));
-        assert.equal(0, helpers.isVersionGreaterThan('1', '1.0'));
-        assert.equal(1, helpers.isVersionGreaterThan('1.0.1', '1.0'));
-        assert.equal(-1, helpers.isVersionGreaterThan('1.0.1', '1.0.2'));
-        assert.equal(1, helpers.isVersionGreaterThan('2.0.1', '1.0.2'));
-        assert.equal(-1, helpers.isVersionGreaterThan('0.0.1', '0.0.2'));
-        assert.equal(-1, helpers.isVersionGreaterThan('0.0.0.2', '0.0.1'));
+        assert.equal(helpers.isVersionGreaterThan(null, null), 0);
+        assert.equal(helpers.isVersionGreaterThan(null, ''), -1);
+        assert.equal(helpers.isVersionGreaterThan('', null), 1);
+        assert.equal(helpers.isVersionGreaterThan('0.0.0', '0.0.0'), 0);
+        assert.equal(helpers.isVersionGreaterThan('1', '1.0'), 0);
+        assert.equal(helpers.isVersionGreaterThan('1.0.1', '1.0'), 1);
+        assert.equal(helpers.isVersionGreaterThan('1.0.1', '1.0.2'), -1);
+        assert.equal(helpers.isVersionGreaterThan('2.0.1', '1.0.2'), 1);
+        assert.equal(helpers.isVersionGreaterThan('0.0.1', '0.0.2'), -1);
+        assert.equal(helpers.isVersionGreaterThan('0.0.0.2', '0.0.1'), -1);
     });
 });
 
@@ -50,18 +49,18 @@ suite('CodeSync Tests', function() {
     
     test('getInstalledExtensions', async function() {
         let installedExtensions: vscode.Extension<any>[] = codeSync.getInstalledExtensions();
-        assert.notEqual(null, installedExtensions);
+        assert.notEqual(installedExtensions, null);
     });
     
     test('getFolderExtensionInfo', function () {
         let goodFolderName: string = 'golf1052.test-1.0.0';
         let goodFolderExtension: codesync.FolderExtension = codeSync.getFolderExtensionInfo(goodFolderName);
-        assert.equal('golf1052.test', goodFolderExtension.id);
-        assert.equal('1.0.0', goodFolderExtension.version);
+        assert.equal(goodFolderExtension.id, 'golf1052.test');
+        assert.equal(goodFolderExtension.version, '1.0.0');
         let badFolderName: string = 'test';
         let badFolderExtension: codesync.FolderExtension = codeSync.getFolderExtensionInfo(badFolderName);
-        assert.equal('test', badFolderExtension.id);
-        assert.equal('', badFolderExtension.version);
+        assert.equal(badFolderExtension.id, 'test');
+        assert.equal(badFolderExtension.version, '');
     });
 });
 
@@ -84,12 +83,12 @@ suite('Remove external extension duplicates', function () {
         await helpers.makeSureDirectoryExists(fakePackage2Folder);
         testHelper.CreatedFolders.push(fakePackage1Folder, fakePackage2Folder);
         let externalExtensions: string[] = await fs.list(codeSyncSyncDir);
-        assert.equal(2, externalExtensions.length);
+        assert.equal(externalExtensions.length, 2);
         await codeSync.removeExternalExtensionDuplicates();
         externalExtensions = await fs.list(codeSyncSyncDir);
-        assert.equal(1, externalExtensions.length);
+        assert.equal(externalExtensions.length, 1);
         let externalExtensionInfo: codesync.FolderExtension = codeSync.getFolderExtensionInfo(externalExtensions[0]);
-        assert.equal('2.0.0', externalExtensionInfo.version);
+        assert.equal(externalExtensionInfo.version, '2.0.0');
     });
     
     teardown(async function() {
@@ -116,7 +115,7 @@ suite('Remove external extension duplicates', function () {
 //     test('checkForSettings', async function() {
 //         let extensions: vscode.Extension<any>[] = vscode.extensions.all;
 //         let settings = await helpers.getSettings(codeSyncExtensionDir);
-//         assert.equal(codeSyncSyncDir, settings.externalPath);
+//         assert.equal(settings.externalPath, codeSyncSyncDir);
         
 //         let fakePackageJson: any = testHelpers.createFakePackage();
 //         let fakePackageFolderName = helpers.createPackageFolderName(fakePackageJson.publisher, fakePackageJson.name, fakePackageJson.version);
@@ -125,8 +124,8 @@ suite('Remove external extension duplicates', function () {
 //         testHelper.CreatedFolders.push(fakePackageFolder);
 //         await fs.write(fakePackageFolder + '/package.json', JSON.stringify(fakePackageJson, null, 4));
 //         await codeSync.importExtensions();
-//         assert.equal(true, await fs.exists(vsCodeExtensionDir + '/' + fakePackageFolderName));
-//         assert.equal(true, await fs.exists(vsCodeExtensionDir + '/' + fakePackageFolderName + '/package.json'));
+//         assert.equal(await fs.exists(vsCodeExtensionDir + '/' + fakePackageFolderName), true);
+//         assert.equal(await fs.exists(vsCodeExtensionDir + '/' + fakePackageFolderName + '/package.json'), true);
 //     });
     
 //     teardown(async function() {
