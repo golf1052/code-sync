@@ -1,92 +1,97 @@
 {
-	"name": "code-sync",
-	"displayName": "CodeSync",
-	"description": "Sync VSCode extensions using your favorite file synchronization service (OneDrive, Dropbox, Google Drive, etc.)",
-	"version": "1.1.0",
-	"publisher": "golf1052",
-    "keywords": ["sync", "extension", "extensions", "codesync"],
-    "icon": "images/logo.png",
-    "license": "See licence in LICENSE",
-    "licenseUrl": "http://opensource.org/licenses/MIT",
-    "homepage": "https://github.com/golf1052/code-sync",
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/golf1052/code-sync.git"
-    },
-    "bugs": {
-        "url": "https://github.com/golf1052/code-sync/issues",
-        "email": "golf1052@msn.com"
-    },
-    "galleryBanner": {
-        "color": "#6495ed",
-        "theme": "light"
-    },
-	"engines": {
-		"vscode": "^1.0.0"
-	},
-	"categories": [
-		"Other"
-	],
-	"activationEvents": [
-		"*"
-	],
-	"main": "./out/src/extension",
-	"contributes": {
-		"commands": [
-            {
-                "command": "extension.importExtensions",
-                "title": "CodeSync: Import extensions"
-            },
-			{
-				"command": "extension.exportExtensions",
-				"title": "CodeSync: Export extensions"
-			},
-			{
-				"command": "extension.listMissingInstalled",
-				"title": "CodeSync: List missing installed extensions"
-			},
-			{
-				"command": "extension.listMissingExternal",
-				"title": "CodeSync: List missing external extensions"
-			},
-            {
-                "command": "extension.listExcludedInstalled",
-                "title": "CodeSync: List excluded installed extensions"
-            },
-            {
-                "command": "extension.listExcludedExternal",
-                "title": "CodeSync: List excluded external extensions"
-            },
-            {
-                "command": "extension.addExcludedInstalled",
-                "title": "CodeSync: Exclude an installed extension"
-            },
-            {
-                "command": "extension.addExcludedExternal",
-                "title": "CodeSync: Exclude an external extension"
-            },
-            {
-                "command": "extension.removeExcludedInstalled",
-                "title": "CodeSync: Remove an exclusion - Installed"
-            },
-            {
-                "command": "extension.removeExcludedExternal",
-                "title": "CodeSync: Remove an exclusion - External"
-            }
-		]
-	},
-	"scripts": {
-		"vscode:prepublish": "node ./node_modules/vscode/bin/compile",
-		"compile": "node ./node_modules/vscode/bin/compile --watch --project ./",
-        "postinstall": "node ./node_modules/vscode/bin/install"
-	},
-    "dependencies": {
-        "recursive-copy": "^2.0.5",
-        "q-io": "^1.13.2"
-    },
-	"devDependencies": {
-		"typescript": "^1.8.5",
-		"vscode": "^0.11.0",
-        "typings": "^1.0.4"
-	}
+  "name": "code-sync",
+  "displayName": "CodeSync",
+  "description": "Sync VSCode extensions using your favorite file synchronization service (OneDrive, Dropbox, Google Drive, etc.)",
+  "version": "1.1.0",
+  "publisher": "golf1052",
+  "keywords": [
+    "sync",
+    "extension",
+    "extensions",
+    "codesync"
+  ],
+  "icon": "images/logo.png",
+  "license": "See licence in LICENSE",
+  "licenseUrl": "http://opensource.org/licenses/MIT",
+  "homepage": "https://github.com/golf1052/code-sync",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/golf1052/code-sync.git"
+  },
+  "bugs": {
+    "url": "https://github.com/golf1052/code-sync/issues",
+    "email": "golf1052@msn.com"
+  },
+  "galleryBanner": {
+    "color": "#6495ed",
+    "theme": "light"
+  },
+  "engines": {
+    "vscode": "^1.0.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "*"
+  ],
+  "main": "./out/src/extension",
+  "contributes": {
+    "commands": [
+      {
+        "command": "extension.importExtensions",
+        "title": "CodeSync: Import extensions"
+      },
+      {
+        "command": "extension.exportExtensions",
+        "title": "CodeSync: Export extensions"
+      },
+      {
+        "command": "extension.listMissingInstalled",
+        "title": "CodeSync: List missing installed extensions"
+      },
+      {
+        "command": "extension.listMissingExternal",
+        "title": "CodeSync: List missing external extensions"
+      },
+      {
+        "command": "extension.listExcludedInstalled",
+        "title": "CodeSync: List excluded installed extensions"
+      },
+      {
+        "command": "extension.listExcludedExternal",
+        "title": "CodeSync: List excluded external extensions"
+      },
+      {
+        "command": "extension.addExcludedInstalled",
+        "title": "CodeSync: Exclude an installed extension"
+      },
+      {
+        "command": "extension.addExcludedExternal",
+        "title": "CodeSync: Exclude an external extension"
+      },
+      {
+        "command": "extension.removeExcludedInstalled",
+        "title": "CodeSync: Remove an exclusion - Installed"
+      },
+      {
+        "command": "extension.removeExcludedExternal",
+        "title": "CodeSync: Remove an exclusion - External"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "node ./node_modules/vscode/bin/compile",
+    "compile": "node ./node_modules/vscode/bin/compile --watch --project ./",
+    "postinstall": "node ./node_modules/vscode/bin/install"
+  },
+  "dependencies": {
+    "q-io": "^1.13.2",
+    "recursive-copy": "^2.0.5"
+  },
+  "devDependencies": {
+    "typescript": "^1.8.5",
+    "vscode": "^0.11.0",
+    "typings": "^1.0.4"
+  }
 }

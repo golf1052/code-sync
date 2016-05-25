@@ -3,8 +3,8 @@ import * as vscode from 'vscode';
 import * as helpers from './helpers';
 import {StatusBarManager} from './status-bar-manager';
 import * as os from 'os';
-var fs = require('q-io/fs');
-var copy = require('recursive-copy');
+var fs: any = require('q-io/fs');
+var copy: any = require('recursive-copy');
 
 export enum ExtensionLocation {
     Installed,
@@ -27,7 +27,7 @@ export class ExternalExtension {
 export class MissingExtension {
 	why: string;
 	extension: any;
-	constructor(w, e) {
+	constructor(w: string, e: any) {
 		this.why = w;
 		this.extension = e;
 	}
@@ -48,7 +48,7 @@ export class CodeSync {
         this.statusBarManager = new StatusBarManager();
     }
     
-    async importExtensions() {
+    async importExtensions(): Promise<void> {
         this.statusBarManager.StatusBarText = 'CodeSync: Importing extensions';
         this.statusBarManager.setSync();
         let missing: any = await this.getMissingPackagesFrom(ExtensionLocation.Installed);
@@ -77,7 +77,7 @@ export class CodeSync {
         this.displayMissingPackages(await this.getMissingPackagesFrom(ExtensionLocation.Installed));
     }
     
-    async exportExtensions() {
+    async exportExtensions(): Promise<void> {
         this.statusBarManager.StatusBarText = 'CodeSync: Exporting extensions';
         this.statusBarManager.setSync();
         let missing: any = await this.getMissingPackagesFrom(ExtensionLocation.External);
@@ -111,22 +111,22 @@ export class CodeSync {
         }
     }
     
-    async checkForSettings() {
+    async checkForSettings(): Promise<void> {
         this.statusBarManager.StatusBarText = 'CodeSync: Checking settings';
         await helpers.makeSureDirectoryExists(this.codeSyncExtensionDir);
         // Migrate old settings.json file to new directory when upgrading
-        let folders: string[] = await fs.list(this.vsCodeExtensionDir);
+        let folders: string[] = await fs.listAsync(this.vsCodeExtensionDir);
         for (let i: number = 0; i < folders.length; i++) {
             let tmpExtension: FolderExtension = this.getFolderExtensionInfo(folders[i]);
             if (tmpExtension.id == 'golf1052.code-sync' &&
             helpers.isVersionGreaterThan(this.currentVersion, tmpExtension.version) == 1) {
-                if (await fs.exists(this.vsCodeExtensionDir + '/' + tmpExtension.id + '-' + tmpExtension.version + '/settings.json') == true) {
-                    await fs.copy(this.vsCodeExtensionDir + '/' + tmpExtension.id + '-' + tmpExtension.version + '/settings.json', this.codeSyncExtensionDir + '/settings.json');
+                if (fs.existsSync(this.vsCodeExtensionDir + '/' + tmpExtension.id + '-' + tmpExtension.version + '/settings.json') == true) {
+                    await fs.copyAsync(this.vsCodeExtensionDir + '/' + tmpExtension.id + '-' + tmpExtension.version + '/settings.json', this.codeSyncExtensionDir + '/settings.json');
                     break;
                 }
             }
         }
-        if (await fs.exists(this.codeSyncExtensionDir + '/settings.json') == false) {
+        if (fs.existsSync(this.codeSyncExtensionDir + '/settings.json') == false) {
             let path: string = null;
             if (this.codeSyncDir == null) {
                 path = await vscode.window.showInputBox({
@@ -138,7 +138,7 @@ export class CodeSync {
                 path = this.codeSyncDir;
             }
             
-            let tmpSettings = {
+            let tmpSettings: any = {
                 externalPath: path,
                 excluded: {
                     installed: [],
@@ -148,16 +148,16 @@ export class CodeSync {
             await helpers.saveSettings(this.codeSyncExtensionDir, tmpSettings);
         }
         
-        let settings = await helpers.getSettings(this.codeSyncExtensionDir);
+        let settings: any = await helpers.getSettings(this.codeSyncExtensionDir);
         this.codeSyncDir = settings.externalPath;
         
-        if (await fs.exists(this.codeSyncDir) == false) {
-            await fs.makeTree(this.codeSyncDir);
+        if (fs.existsSync(this.codeSyncDir) == false) {
+            await fs.makeTreeAsync(this.codeSyncDir);
         }
     }
     
-    async saveExcludedPackages(excluded: string[], location: ExtensionLocation) {
-        let settings = await helpers.getSettings(this.codeSyncExtensionDir);
+    async saveExcludedPackages(excluded: string[], location: ExtensionLocation): Promise<void> {
+        let settings: any = await helpers.getSettings(this.codeSyncExtensionDir);
         if (location == ExtensionLocation.Installed) {
             settings.excluded.installed = excluded;
         }
@@ -167,7 +167,7 @@ export class CodeSync {
         await helpers.saveSettings(this.codeSyncExtensionDir, settings);
     }
     
-    async addExcludedPackage(location: ExtensionLocation) {
+    async addExcludedPackage(location: ExtensionLocation): Promise<void> {
         let excluded: string[] = await this.getExcludedPackages(location);
         let items: vscode.QuickPickItem[] = [];
         if (location == ExtensionLocation.Installed) {
@@ -221,7 +221,7 @@ export class CodeSync {
         }
     }
     
-    async removeExcludedPackage(location: ExtensionLocation) {
+    async removeExcludedPackage(location: ExtensionLocation): Promise<any> {
         let excluded: string[] = await this.getExcludedPackages(location);
         let items: vscode.QuickPickItem[] = [];
         excluded.forEach(str => {
@@ -247,7 +247,7 @@ export class CodeSync {
         }
     }
     
-    async displayExcludedPackages(location: ExtensionLocation) {
+    async displayExcludedPackages(location: ExtensionLocation): Promise<any> {
         let excluded: string[] = await this.getExcludedPackages(location);
         if (location == ExtensionLocation.Installed) {
             vscode.window.showInformationMessage('Excluded installed packages:');
@@ -263,11 +263,11 @@ export class CodeSync {
         }
     }
     
-    async saveExtensionToInstalled(extension: ExternalExtension) {
+    async saveExtensionToInstalled(extension: ExternalExtension): Promise<any> {
         let installedExtensionsPath: string = this.vsCodeExtensionDir + '/' + extension.id + '-' + extension.version;
-        if (await fs.exists(installedExtensionsPath) == false) {
+        if (fs.existsSync(installedExtensionsPath) == false) {
             if (extension.isTheme) {
-                await fs.makeTree(installedExtensionsPath);
+                await fs.makeTreeAsync(installedExtensionsPath);
             }
             else {
                 return;
@@ -287,12 +287,12 @@ export class CodeSync {
         }
     }
     
-    async saveExtensionToExternal(extension: vscode.Extension<any>) {
+    async saveExtensionToExternal(extension: vscode.Extension<any>): Promise<any> {
         let externalExtensionPath: string = this.codeSyncDir + '/' + extension.id + '-' + extension.packageJSON.version;
-        if (await fs.exists(externalExtensionPath) == false) {
-            await fs.makeTree(externalExtensionPath);
+        if (fs.existsSync(externalExtensionPath) == false) {
+            await fs.makeTreeAsync(externalExtensionPath);
         }
-        let externalPackageInfo = await this.tryGetPackageJson(externalExtensionPath);
+        let externalPackageInfo: any = await this.tryGetPackageJson(externalExtensionPath);
         if (externalPackageInfo != null) {
             if (extension.packageJSON.version == externalPackageInfo.version) {
                 // versions are the same so return
@@ -304,12 +304,12 @@ export class CodeSync {
         }
         else {
             // just copy the package.json if it's something else
-            await fs.copyTree(extension.extensionPath + '/package.json', externalExtensionPath + '/package.json');
+            await fs.copyTreeAsync(extension.extensionPath + '/package.json', externalExtensionPath + '/package.json');
         }
     }
     
     async getExcludedPackages(location: ExtensionLocation): Promise<string[]> {
-        let settings = await helpers.getSettings(this.codeSyncExtensionDir);
+        let settings: any = await helpers.getSettings(this.codeSyncExtensionDir);
         let value: string[] = [];
         if (location == ExtensionLocation.Installed) {
             value = settings.excluded.installed;
@@ -329,7 +329,7 @@ export class CodeSync {
         let id: string = '';
         let version: string = '';
         if (folderName.lastIndexOf('-') != -1) {
-            let tmpVersion = folderName.substring(folderName.lastIndexOf('-') + 1);
+            let tmpVersion: string = folderName.substring(folderName.lastIndexOf('-') + 1);
             if (!isNaN(parseInt(tmpVersion[0])) &&
             !isNaN(parseInt(tmpVersion[tmpVersion.length - 1]))) {
                 id = folderName.substring(0, folderName.lastIndexOf('-'));
@@ -348,12 +348,12 @@ export class CodeSync {
         };
     }
     
-    statusBarSetGoodStatus() {
+    statusBarSetGoodStatus(): void {
         this.statusBarManager.StatusBarText = 'CodeSync';
         this.statusBarManager.setCheck();
     }
 
-    statusBarSetRestartStatus() {
+    statusBarSetRestartStatus(): void {
         this.statusBarManager.StatusBarText = 'CodeSync: Restart required!';
         this.statusBarManager.setStop();
     }
@@ -370,10 +370,10 @@ export class CodeSync {
             let excluded: string[] = await this.getExcludedPackages(ExtensionLocation.Installed);
             r.which = ExtensionLocation.External;
             r.missing = [];
-            for (let i = 0; i < installed.length; i++) {
+            for (let i: number = 0; i < installed.length; i++) {
                 let found: boolean = false;
                 let why: string = 'missing';
-                for (let j = 0; j < external.length; j++) {
+                for (let j: number = 0; j < external.length; j++) {
                     if (installed[i].id == external[j].id) {
                         if (installed[i].packageJSON.version == external[j].version) {
                             found = true;
@@ -399,10 +399,10 @@ export class CodeSync {
             let excluded: string[] = await this.getExcludedPackages(ExtensionLocation.External);
             r.which = ExtensionLocation.Installed;
             r.missing = [];
-            for (let i = 0; i < external.length; i++) {
+            for (let i: number = 0; i < external.length; i++) {
                 let found: boolean = false;
                 let why: string = 'missing';
-                for (let j = 0; j < installed.length; j++) {
+                for (let j: number = 0; j < installed.length; j++) {
                     if (external[i].id == installed[j].id) {
                         if (external[i].version == installed[j].packageJSON.version) {
                             found = true;
@@ -427,7 +427,7 @@ export class CodeSync {
         return r;
     }
     
-    displayMissingPackages(m: any) {
+    displayMissingPackages(m: any): void {
         if (m.missing.length == 0) {
             if (m.which == ExtensionLocation.Installed) {
                 this.statusBarManager.setTimer(() => {
@@ -453,7 +453,7 @@ export class CodeSync {
                 this.statusBarManager.setAlert();
                 vscode.window.showInformationMessage('Extensions missing from installed:');
             }
-            for (let i = 0; i < m.missing.length; i++) {
+            for (let i: number = 0; i < m.missing.length; i++) {
                 let message: string = m.missing[i].extension.packageJSON.displayName;
                 if (!message) {
                     message = m.missing[i].extension.id;
@@ -470,7 +470,7 @@ export class CodeSync {
     
     getInstalledExtensions(): vscode.Extension<any>[] {
         let extensions: vscode.Extension<any>[] = [];
-        extensions = vscode.extensions.all.filter(function (extension: any) {
+        extensions = vscode.extensions.all.filter(function (extension: any): boolean {
             return extension.extensionPath.startsWith(os.homedir());
         });
         return extensions;
@@ -478,10 +478,10 @@ export class CodeSync {
     
     async getExternalExtensions(): Promise<ExternalExtension[]> {
         await this.removeExternalExtensionDuplicates();
-        let folders: string[] = await fs.list(this.codeSyncDir);
+        let folders: string[] = await fs.listAsync(this.codeSyncDir);
         let externalExtensions: ExternalExtension[] = [];
-        for (let i = 0; i < folders.length; i++) {
-            let e = await this.loadExternalExtension(this.codeSyncDir + '/' + folders[i]);
+        for (let i: number = 0; i < folders.length; i++) {
+            let e: ExternalExtension = await this.loadExternalExtension(this.codeSyncDir + '/' + folders[i]);
             if (e != null) {
                 externalExtensions.push(e);
             }
@@ -489,14 +489,14 @@ export class CodeSync {
         return externalExtensions;
     }
     
-    async cleanExternalExtensions() {
-        let folders: string[] = await fs.list(this.codeSyncDir);
+    async cleanExternalExtensions(): Promise<void> {
+        let folders: string[] = await fs.listAsync(this.codeSyncDir);
         let markedForDeath: string[] = [];
         let extensions: vscode.Extension<any>[] = this.getInstalledExtensions();
         
         for (let i: number = 0; i < folders.length; i++) {
             let tmpExtension: FolderExtension = this.getFolderExtensionInfo(folders[i]);
-            let packageJSON = await this.tryGetPackageJson(this.codeSyncDir + '/' + folders[i]);
+            let packageJSON: any = await this.tryGetPackageJson(this.codeSyncDir + '/' + folders[i]);
             let foundPackage: boolean = false;
             for (let j: number = 0; j < extensions.length; j++) {
                 if (packageJSON != null) {
@@ -529,12 +529,12 @@ export class CodeSync {
         }
         
         for (let i: number = 0; i < markedForDeath.length; i++) {
-            await fs.removeTree(this.codeSyncDir + '/' + markedForDeath[i]);
+            await fs.removeTreeAsync(this.codeSyncDir + '/' + markedForDeath[i]);
         }
     }
     
-    async removeExternalExtensionDuplicates() {
-        let folders: string[] = await fs.list(this.codeSyncDir);
+    async removeExternalExtensionDuplicates(): Promise<any> {
+        let folders: string[] = await fs.listAsync(this.codeSyncDir);
         let extensions: any[] = [];
         let markedForDeath: string[] = [];
         
@@ -570,13 +570,13 @@ export class CodeSync {
         }
         
         for (let i: number = 0; i < markedForDeath.length; i++) {
-            await fs.removeTree(this.codeSyncDir + '/' + markedForDeath[i]);
+            await fs.removeTreeAsync(this.codeSyncDir + '/' + markedForDeath[i]);
         }
     }
     
     async tryGetPackageJson(path: string): Promise<any> {
-        if (await fs.exists(path + '/package.json')) {
-            return JSON.parse(await fs.read(path + '/package.json'));
+        if (fs.existsSync(path + '/package.json')) {
+            return JSON.parse(await fs.readAsync(path + '/package.json'));
         }
         else {
             return null;
@@ -584,7 +584,7 @@ export class CodeSync {
     }
     
     async loadExternalExtension(path: string): Promise<ExternalExtension> {
-        if (await fs.exists(path)) {
+        if (fs.existsSync(path)) {
             let e: ExternalExtension = new ExternalExtension();
             e.packageJSON = await this.tryGetPackageJson(path);
             if (e.packageJSON == null) {

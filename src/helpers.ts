@@ -1,17 +1,23 @@
 'use strict';
-var fs = require('q-io/fs');
+var fs: any = require('q-io/fs');
 import * as os from 'os';
 
+/**
+ * Checks if a > b.
+ * If a > b return 1
+ * If a === b return 0
+ * If a < b return -1
+ */
 export function isVersionGreaterThan(a: string, b: string): number {
     if (a === b) {
         return 0;
     }
     else if ((typeof a !== 'undefined' && typeof b === 'undefined') ||
-    (a !== null && b === null)) {
+        (a !== null && b === null)) {
         return 1;
     }
     else if ((typeof a === 'undefined' && typeof b !== 'undefined') ||
-    (a === null && b !== null)) {
+        (a === null && b !== null)) {
         return -1;
     }
     else {
@@ -59,7 +65,7 @@ export function isVersionGreaterThan(a: string, b: string): number {
     }
 }
 
-export async function makeSureDirectoryExists(path: string) {
+export async function makeSureDirectoryExists(path: string): Promise<void> {
     if (await fs.exists(path) == false) {
         await fs.makeDirectory(path);
     }
@@ -69,11 +75,11 @@ export async function getSettings(path: string): Promise<any> {
     return JSON.parse(await fs.read(path + '/settings.json'));
 }
 
-export async function saveSettings(path: string, settings: any) {
+export async function saveSettings(path: string, settings: any): Promise<void> {
     await fs.write(path + '/settings.json', JSON.stringify(settings, null, 4));
 }
 
-export async function deleteDirectory(path: string) {
+export async function deleteDirectory(path: string): Promise<void> {
     if (await fs.exists(path) == true) {
         await fs.removeTree(path);
     }

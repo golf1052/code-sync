@@ -16,7 +16,7 @@ enum ExtensionLocation {
 	External
 }
 
-export async function activate(context: vscode.ExtensionContext) {
+export async function activate(context: vscode.ExtensionContext): Promise<void> {
 	console.log('Congratulations, your extension "code-sync" is now active!');
     
     codeSync = new codesync.CodeSync(currentVersion, vsCodeExtensionDir, codeSyncExtensionDir, null);
@@ -24,43 +24,43 @@ export async function activate(context: vscode.ExtensionContext) {
 	await codeSync.checkForSettings();
     await codeSync.importExtensions();
     
-    let importExtensionsDisposable = vscode.commands.registerCommand('extension.importExtensions', async function() {
+    let importExtensionsDisposable: vscode.Disposable = vscode.commands.registerCommand('extension.importExtensions', async function(): Promise<void> {
         await codeSync.importExtensions();
     });
     
-	let exportExtensionsDisposable = vscode.commands.registerCommand('extension.exportExtensions', async function() {
+	let exportExtensionsDisposable: vscode.Disposable = vscode.commands.registerCommand('extension.exportExtensions', async function(): Promise<void> {
         await codeSync.exportExtensions();
 	});
 	
-	let listMissingInstalledDisposable = vscode.commands.registerCommand('extension.listMissingInstalled', async function() {
+	let listMissingInstalledDisposable: vscode.Disposable = vscode.commands.registerCommand('extension.listMissingInstalled', async function(): Promise<void> {
         codeSync.displayMissingPackages(await codeSync.getMissingPackagesFrom(ExtensionLocation.Installed));
 	});
 	
-	let listMissingExternalDisposable = vscode.commands.registerCommand('extension.listMissingExternal', async function() {
+	let listMissingExternalDisposable: vscode.Disposable = vscode.commands.registerCommand('extension.listMissingExternal', async function(): Promise<void> {
         codeSync.displayMissingPackages(await codeSync.getMissingPackagesFrom(ExtensionLocation.External));
 	});
     
-    let listExcludedInstalledDisposable = vscode.commands.registerCommand('extension.listExcludedInstalled', () => {
+    let listExcludedInstalledDisposable: vscode.Disposable = vscode.commands.registerCommand('extension.listExcludedInstalled', () => {
         codeSync.displayExcludedPackages(ExtensionLocation.Installed);
     });
     
-    let listExcludedExternalDisposable = vscode.commands.registerCommand('extension.listExcludedExternal', () => {
+    let listExcludedExternalDisposable: vscode.Disposable = vscode.commands.registerCommand('extension.listExcludedExternal', () => {
         codeSync.displayExcludedPackages(ExtensionLocation.External);
     });
     
-    let addExcludedInstalledDisposable = vscode.commands.registerCommand('extension.addExcludedInstalled', () => {
+    let addExcludedInstalledDisposable: vscode.Disposable = vscode.commands.registerCommand('extension.addExcludedInstalled', () => {
         codeSync.addExcludedPackage(ExtensionLocation.Installed);
     });
     
-    let addExcludedExternalDisposable = vscode.commands.registerCommand('extension.addExcludedExternal', () => {
+    let addExcludedExternalDisposable: vscode.Disposable = vscode.commands.registerCommand('extension.addExcludedExternal', () => {
         codeSync.addExcludedPackage(ExtensionLocation.External);
     });
     
-    let removeExcludedInstalledDisposable = vscode.commands.registerCommand('extension.removeExcludedInstalled', () => {
+    let removeExcludedInstalledDisposable: vscode.Disposable = vscode.commands.registerCommand('extension.removeExcludedInstalled', () => {
         codeSync.removeExcludedPackage(ExtensionLocation.Installed);
     });
     
-    let removeExcludedExternalDisposable = vscode.commands.registerCommand('extension.removeExcludedExternal', () => {
+    let removeExcludedExternalDisposable: vscode.Disposable = vscode.commands.registerCommand('extension.removeExcludedExternal', () => {
         codeSync.removeExcludedPackage(ExtensionLocation.External);
     });
 	
@@ -75,6 +75,6 @@ export async function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(removeExcludedExternalDisposable);
 }
 
-export async function deactivate() {
+export async function deactivate(): Promise<void> {
     await codeSync.exportExtensions();
 }
