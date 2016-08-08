@@ -127,10 +127,18 @@ export async function activate(context: vscode.ExtensionContext) {
 export function deactivate() {
     if (codeSync.Active) {
         if (codeSync.Settings.Settings.autoExport) {
-            codeSync.exportSettings();
-            codeSync.exportKeybindings();
-            codeSync.exportSnippets();
-            codeSync.exportExtensions();
+            if (codeSync.Settings.Settings.importSettings) {
+                codeSync.exportSettings();
+            }
+            if (codeSync.Settings.Settings.importKeybindings) {
+                codeSync.exportKeybindings();
+            }
+            if (codeSync.Settings.Settings.importSnippets) {
+                codeSync.exportSnippets();
+            }
+            if (codeSync.Settings.Settings.importExtensions) {
+                codeSync.exportExtensions();
+            }
         }
     }
 }
