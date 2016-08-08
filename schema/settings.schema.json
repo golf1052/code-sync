@@ -49,7 +49,9 @@
                     "description": "List of excluded external extensions",
                     "type": "array"
                 }
-            }
+            },
+            "required": ["installed", "external"]
         }
-    }
+    },
+    "required": ["externalPath", "autoImport", "autoExport", "importSettings", "importKeybindings", "importSnippets", "importExtensions", "excluded"]
 }

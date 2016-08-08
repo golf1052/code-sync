@@ -84,12 +84,12 @@ export class CodeSync {
                     external: []
                 }
             };
-            this.codeSyncSettings.Settings = tmpSettings;
-            this.codeSyncSettings.save();
+            this.Settings.Settings = tmpSettings;
+            this.Settings.save();
         }
-        let csSettings: settings.Settings = this.codeSyncSettings.Settings;
+        let csSettings: settings.Settings = this.Settings.Settings;
         this.codeSyncDir = csSettings.externalPath;
-        this.codeSyncSettings.ExternalExtensionsPath = path.join(this.codeSyncDir, EXTENSIONS);
+        this.Settings.ExternalExtensionsPath = path.join(this.codeSyncDir, EXTENSIONS);
         if (!fs.existsSync(this.codeSyncDir)) {
             helpers.getDir(this.codeSyncDir);
         }
@@ -170,8 +170,8 @@ export class CodeSync {
 
     importExtensions() {
         this.startSync('Importing extensions');
-        let excluded: string[] = this.codeSyncSettings.ExcludedExternalPackages;
-        let extensions: string[] = this.codeSyncSettings.Extensions;
+        let excluded: string[] = this.Settings.ExcludedExternalPackages;
+        let extensions: string[] = this.Settings.Extensions;
         let installedAny: boolean = false;
         extensions.forEach(e => {
             let val = helpers.installExtension(e);
@@ -190,7 +190,7 @@ export class CodeSync {
 
     exportExtensions() {
         this.startSync('Exporting extensions');
-        let excluded: string[] = this.codeSyncSettings.ExcludedInstalledPackages;
+        let excluded: string[] = this.Settings.ExcludedInstalledPackages;
         let extensions: string[] = [];
         let e = helpers.getInstalledExtensions();
         helpers.getInstalledExtensions().forEach(e => {
@@ -198,8 +198,8 @@ export class CodeSync {
                 extensions.push(e.id);
             }
         });
-        this.codeSyncSettings.Extensions = extensions;
-        this.codeSyncSettings.saveExtensions();
+        this.Settings.Extensions = extensions;
+        this.Settings.saveExtensions();
         this.statusBar.reset();
     }
 
@@ -226,7 +226,9 @@ export class CodeSync {
         let result = await vscode.window.showQuickPick(items, {matchOnDescription: true});
         if (result) {
             excluded.push(result.label);
-            this.Settings.Settings.excluded.installed = excluded;
+            let settings = this.Settings.Settings;
+            settings.excluded.installed = excluded;
+            this.Settings.Settings = settings;
             this.Settings.save();
             vscode.window.showInformationMessage('Successfully excluded package ' + result.label);
         }
@@ -248,7 +250,9 @@ export class CodeSync {
         let result = await vscode.window.showQuickPick(items);
         if (result) {
             excluded.splice(excluded.indexOf(result.label, 1));
-            this.Settings.Settings.excluded.installed = excluded;
+            let settings = this.Settings.Settings;
+            settings.excluded.installed = excluded;
+            this.Settings.Settings = settings;
             this.Settings.save();
             vscode.window.showInformationMessage('Successfully included package ' + result.label);
         }
@@ -277,7 +281,9 @@ export class CodeSync {
         let result = await vscode.window.showQuickPick(items);
         if (result) {
             excluded.push(result.label);
-            this.Settings.Settings.excluded.external = excluded;
+            let settings = this.Settings.Settings;
+            settings.excluded.external = excluded;
+            this.Settings.Settings = settings;
             this.Settings.save();
             vscode.window.showInformationMessage('Successfully excluded package ' + result.label);
         }
@@ -299,7 +305,9 @@ export class CodeSync {
         let result = await vscode.window.showQuickPick(items);
         if (result) {
             excluded.splice(excluded.indexOf(result.label, 1));
-            this.Settings.Settings.excluded.external = excluded;
+            let settings = this.Settings.Settings;
+            settings.excluded.external = excluded;
+            this.Settings.Settings = settings;
             this.Settings.save();
             vscode.window.showInformationMessage('Successfully included package ' + result.label);
         }
@@ -340,15 +348,37 @@ export class CodeSync {
         else {
             items[1].description = 'Current setting';
         }
+        let settings = this.Settings.Settings;
         let result = await vscode.window.showQuickPick(items, options);
         if (result) {
             if (result.label == 'On') {
-                this.codeSyncSettings.Settings[setting] = true;
+                settings[setting] = true;
             }
             else {
-                this.codeSyncSettings.Settings[setting] = false;
+                settings[setting] = false;
+                if (setting == 'importSettings') {
+                    if (fs.existsSync(path.join(this.Settings.Settings.externalPath, SETTINGS))) {
+                        rimraf.sync(path.join(this.Settings.Settings.externalPath, SETTINGS));
+                    }
+                }
+                else if (setting == 'importKeybindings') {
+                    if (fs.existsSync(path.join(this.Settings.Settings.externalPath, KEYBINDINGS))) {
+                        rimraf.sync(path.join(this.Settings.Settings.externalPath, KEYBINDINGS));
+                    }
+                }
+                else if (setting == 'importSnippets') {
+                    if (fs.existsSync(path.join(this.Settings.Settings.externalPath, SNIPPETS))) {
+                        rimraf.sync(path.join(this.Settings.Settings.externalPath, SNIPPETS));
+                    }
+                }
+                else if (setting == 'importExtensions') {
+                    if (fs.existsSync(path.join(this.Settings.Settings.externalPath, EXTENSIONS))) {
+                        rimraf.sync(path.join(this.Settings.Settings.externalPath, EXTENSIONS));
+                    }
+                }
             }
-            this.codeSyncSettings.save();
+            this.Settings.Settings = settings;
+            this.Settings.save();
         }
     }
 
