@@ -38,4 +38,4 @@ CodeSync has been completely rewritten. It however is completely incompatible wi
 - Toggle import/export extensions: Toggle auto importing/exporting of extensions.
 
 ## Contributing/Bugs
-I've only tested this on Windows 10 with OneDrive. If you have any issues please report them using Issues. Thanks!
+I've done a little testing between two Windows 10 machines and an OS X laptop. If you have any issues please report them using Issues. Thanks!
