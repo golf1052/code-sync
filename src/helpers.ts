@@ -1,6 +1,144 @@
 'use strict';
-var fs: any = require('q-io/fs');
+import * as vscode from 'vscode';
 import * as os from 'os';
+import * as path from 'path';
+import * as fs from 'fs';
+import * as child_process from 'child_process';
+import * as cs from './cs';
+var recursive_copy = require('recursive-copy');
+var mkdirp = require('mkdirp');
+
+export interface FolderExtension {
+    id: string;
+    version: string;
+}
+
+let windows: boolean = process.platform == 'win32';
+let osx: boolean = process.platform == 'darwin';
+let linux: boolean = process.platform == 'linux';
+
+export function getInstalledExtensions(): vscode.Extension<any>[] {
+    return vscode.extensions.all.filter(e => {
+        return e.extensionPath.startsWith(os.homedir());
+    });
+}
+
+export function getExtensionDir(): string {
+    let extensions = getInstalledExtensions();
+    if (extensions.length > 0) {
+        let p: path.ParsedPath = path.parse(extensions[0].extensionPath);
+        return p.dir;
+    }
+    else {
+        return path.join(os.homedir(), '.vscode/extensions');
+    }
+}
+
+function getCodeSettingsFolderPath(): string {
+    if (windows) {
+        return path.join(process.env.APPDATA, 'Code/User/');
+    }
+    else if (osx) {
+        return path.join(os.homedir(), 'Library/Application Support/Code/User/');
+    }
+    else if (linux) {
+        return path.join(os.homedir(), '.config/Code/User/');
+    }
+    else {
+        return '';
+    }
+}
+
+export function getUserSettingsFilePath(): string {
+    return path.join(getCodeSettingsFolderPath(), cs.SETTINGS);
+}
+
+export function getKeybindingsFilePath(): string {
+    return path.join(getCodeSettingsFolderPath(), cs.KEYBINDINGS);
+}
+
+export function getSnippetsFolderPath(): string {
+    return path.join(getCodeSettingsFolderPath(), cs.SNIPPETS + '/');
+}
+
+export function copy(src: string, dest: string) {
+    var options = {
+        overwrite: true
+    };
+    recursive_copy(src, dest, options);
+}
+
+export function getDir(path: string): string {
+    mkdirp.sync(path);
+    return path;
+}
+
+// returns false if the extension was already installed
+// returns true otherwise...
+export function installExtension(name: string): boolean {
+    let options: child_process.ExecSyncOptions = {};
+    options.encoding = 'utf8';
+    let command: string = getCodeCommand() + ' --install-extension ';
+    command += name;
+    let out = child_process.execSync(command, options);
+    if (out.indexOf('is already installed') != -1) {
+        return false;
+    }
+    else {
+        return true;
+    }
+}
+
+export function isCodeOnPath(): boolean {
+    let version: string = '';
+    try {
+        version = child_process.execSync(getCodeCommand() + ' --version', {encoding: 'utf8'});
+    }
+    catch (e) {
+        return false;
+    }
+    if (version != '') {
+        return true;
+    }
+    return false;
+}
+
+function getCodeCommand(): string {
+    if (windows) {
+        return 'code.cmd';
+    }
+    else {
+        return 'code';
+    }
+}
+
+/**
+ * Given publisher.name-version returns a FolderExtension object with id = publisher.name and
+ * version = version. If the folderName is malformed then id = folderName and version will be
+ * an empty string
+ */
+export function getFolderExtensionInfo(folderName: string): FolderExtension {
+    let id: string = '';
+    let version: string = '';
+    if (folderName.lastIndexOf('-') != -1) {
+        let tmpVersion: string = folderName.substring(folderName.lastIndexOf('-') + 1);
+        if (!isNaN(parseInt(tmpVersion[0])) &&
+        !isNaN(parseInt(tmpVersion[tmpVersion.length - 1]))) {
+            id = folderName.substring(0, folderName.lastIndexOf('-'));
+            version = tmpVersion;
+        }
+        else {
+            id = folderName;
+        }
+    }
+    else {
+        id = folderName;
+    }
+    return {
+        id: id,
+        version: version
+    };
+}
 
 /**
  * Checks if a > b.
@@ -63,32 +201,4 @@ export function isVersionGreaterThan(a: string, b: string): number {
         }
         return 0;
     }
-}
-
-export async function makeSureDirectoryExists(path: string): Promise<void> {
-    if (await fs.exists(path) == false) {
-        await fs.makeDirectory(path);
-    }
-}
-
-export async function getSettings(path: string): Promise<any> {
-    return JSON.parse(await fs.read(path + '/settings.json'));
-}
-
-export async function saveSettings(path: string, settings: any): Promise<void> {
-    await fs.write(path + '/settings.json', JSON.stringify(settings, null, 4));
-}
-
-export async function deleteDirectory(path: string): Promise<void> {
-    if (await fs.exists(path) == true) {
-        await fs.removeTree(path);
-    }
-}
-
-export function getHomeDirectory(): string {
-    return os.homedir();
-}
-
-export function createPackageFolderName(publisher: string, name: string, version: string): string {
-    return `${publisher}.${name}-${version}`;
 }

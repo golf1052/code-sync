@@ -5,57 +5,42 @@ export class StatusBarManager {
     private statusBar: vscode.StatusBarItem;
     private statusBarText: string;
     private icons: string[];
-    private package: string = '$(package) ';
-    private check: string = '$(check) ';
-    private alert: string = '$(alert) ';
-    private stop: string = '$(stop) ';
-    private sync: string = '$(sync) ';
-    
+
+    private package: string = '$(package)';
+    private check: string = '$(check)';
+    private alert: string = '$(alert)';
+    private stop: string = '$(stop)';
+    private sync: string = '$(sync)';
+
     constructor() {
         this.statusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 0);
-        this.icons = [];
         this.statusBarText = '';
+        this.icons = [];
         this.setCheck();
-        this.show();
     }
-    
-    show() {
-        this.statusBar.show();
-    }
-    
-    hide() {
-        this.statusBar.hide();
-    }
-    
+
     get StatusBarText(): string {
         return this.statusBarText;
     }
-    
+
     set StatusBarText(text: string) {
-        if (this.statusBarText.toLowerCase().indexOf('restart') != -1) {
-            this.setTimer(() => {
-                this.statusBarText = text;
-            }, 10000);
-        }
-        else {
-            this.statusBarText = text;
-            this.build();
-        }
+        this.statusBarText = text;
+        this.build();
     }
-    
-    private build() {
-        let text = '';
-        this.icons.forEach((i) => {
-            text += i;
-        });
-        text += this.statusBarText;
-        this.statusBar.text = text;
+
+    show() {
+        this.statusBar.show();
     }
-    
-    private resetIcons() {
-        this.icons = [this.package];
+
+    hide() {
+        this.statusBar.hide();
     }
-    
+
+    reset() {
+        this.StatusBarText = '';
+        this.setCheck();
+    }
+
     setCheck() {
         this.resetIcons();
         this.icons.push(this.check);
@@ -79,20 +64,20 @@ export class StatusBarManager {
         this.icons.push(this.sync);
         this.build();
     }
-    
-    setTimer(preFn: () => void, time: number, postFn?: () => void) {
-        let oldText = this.StatusBarText;
-        let oldIcons = this.icons;
-        preFn();
-        let self = this;
-        setTimeout((function () {
-            if (postFn) {
-                postFn();
-            }
-            else {
-                self.icons = oldIcons;
-                self.StatusBarText = oldText;
-            }
-        }), time);
+
+    private build() {
+        let text = '';
+        this.icons.forEach(i => {
+            text += i + ' ';
+        });
+        text += 'CodeSync';
+        if (this.statusBarText != '') {
+            text += ': ' + this.statusBarText;
+        }
+        this.statusBar.text = text;
+    }
+
+    private resetIcons() {
+        this.icons = [this.package];
     }
 }
