@@ -97,6 +97,9 @@ export async function activate(context: vscode.ExtensionContext) {
     let toggleImportExtensionsDisposable = vscode.commands.registerCommand('extension.toggleImportExtensions', async function() {
         await codeSync.toggleSetting('importExtensions', codeSync.Settings.Settings.importExtensions);
     });
+    let setSyncPathDisposable = vscode.commands.registerCommand('extension.setSyncPath', async function() {
+        await codeSync.setExternalSyncPath();
+    });
 
     context.subscriptions.push(
         importAllDisposable,
@@ -120,7 +123,8 @@ export async function activate(context: vscode.ExtensionContext) {
         toggleImportSettingsDisposable,
         toggleImportKeybindingsDisposable,
         toggleImportSnippetsDisposable,
-        toggleImportExtensionsDisposable
+        toggleImportExtensionsDisposable,
+        setSyncPathDisposable
     );
 }
 

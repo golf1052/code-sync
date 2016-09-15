@@ -202,3 +202,8 @@ export function isVersionGreaterThan(a: string, b: string): number {
         return 0;
     }
 }
+
+export function isFileEmpty(path: string) {
+    let stats: fs.Stats = fs.statSync(path);
+    return stats.size == 0;
+}
