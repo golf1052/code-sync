@@ -95,7 +95,10 @@ export class CodeSync {
             prompt: 'Enter the full path to where you want CodeSync to sync to',
             value: path.join(os.homedir(), 'OneDrive/Apps/code-sync')
         });
-        if (extPath == '') {
+        if (extPath == undefined) {
+            return;
+        }
+        else if (extPath == '') {
             await vscode.window.showWarningMessage('External sync path was blank');
             return;
         }
