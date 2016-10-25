@@ -13,7 +13,7 @@ export const SETTINGS = 'settings.json';
 export const KEYBINDINGS = 'keybindings.json';
 export const SNIPPETS = 'snippets';
 
-export const currentVersion: string = '2.0.0';
+export const currentVersion: string = '2.1.0';
 export let vsCodeExtensionDir: string = helpers.getExtensionDir();
 export let codeSyncExtensionDir: string = path.join(vsCodeExtensionDir, 'golf1052.code-sync-' + currentVersion);
 
@@ -59,20 +59,11 @@ export class CodeSync {
         let extensionDir = helpers.getDir(this.codeSyncExtensionDir);
         // if settings don't already exist
         if (!fs.existsSync(path.join(extensionDir, SETTINGS))) {
-            let extPath: string = '';
-            if (this.codeSyncDir == '') {
-                extPath = await vscode.window.showInputBox({
-                    prompt: 'Enter the full path to where you want CodeSync to sync to',
-                    value: path.join(os.homedir(), 'OneDrive/Apps/code-sync')
-                });
-            }
-            else {
-                extPath = this.codeSyncDir;
-            }
-
+            // we need to create settings on first launch because when we call this.Settings.Settings
+            // we're going to try to read settings that don't exist yet
             let tmpSettings: settings.Settings = {
                 $schema: './schema/settings.schema.json',
-                externalPath: extPath,
+                externalPath: path.join(os.homedir(), 'OneDrive/Apps/code-sync'),
                 autoImport: true,
                 autoExport: true,
                 importSettings: true,
@@ -86,6 +77,8 @@ export class CodeSync {
             };
             this.Settings.Settings = tmpSettings;
             this.Settings.save();
+
+            await this.setExternalSyncPath();
         }
         let csSettings: settings.Settings = this.Settings.Settings;
         this.codeSyncDir = csSettings.externalPath;
@@ -94,6 +87,29 @@ export class CodeSync {
             helpers.getDir(this.codeSyncDir);
         }
         this.statusBar.reset();
+    }
+
+    async setExternalSyncPath() {
+        let extPath: string = '';
+        extPath = await vscode.window.showInputBox({
+            prompt: 'Enter the full path to where you want CodeSync to sync to',
+            value: path.join(os.homedir(), 'OneDrive/Apps/code-sync')
+        });
+        if (extPath == undefined) {
+            return;
+        }
+        else if (extPath == '') {
+            await vscode.window.showWarningMessage('External sync path was blank');
+            return;
+        }
+        if (!fs.existsSync(extPath)) {
+            helpers.getDir(extPath);
+        }
+        let csSettings: settings.Settings = this.Settings.Settings;
+        csSettings.externalPath = extPath;
+        this.codeSyncDir = extPath;
+        this.Settings.Settings = csSettings;
+        this.Settings.save();
     }
 
     importAll() {
@@ -119,7 +135,10 @@ export class CodeSync {
         if (!fs.existsSync(path.join(this.codeSyncDir, SETTINGS))) {
             return;
         }
-        helpers.copy(path.join(this.codeSyncDir, SETTINGS), helpers.getUserSettingsFilePath());
+        let settingsPath: string = path.join(this.codeSyncDir, SETTINGS);
+        if (!helpers.isFileEmpty(settingsPath)) {
+            helpers.copy(settingsPath, helpers.getUserSettingsFilePath());
+        }
         this.statusBar.reset();
     }
 
@@ -137,7 +156,10 @@ export class CodeSync {
         if (!fs.existsSync(path.join(this.codeSyncDir, KEYBINDINGS))) {
             return;
         }
-        helpers.copy(path.join(this.codeSyncDir, KEYBINDINGS), helpers.getKeybindingsFilePath());
+        let keybindingsPath: string = path.join(this.codeSyncDir, KEYBINDINGS);
+        if (!helpers.isFileEmpty(keybindingsPath)) {
+            helpers.copy(keybindingsPath, helpers.getKeybindingsFilePath());
+        }
         this.statusBar.reset();
     }
 
@@ -152,10 +174,18 @@ export class CodeSync {
 
     importSnippets() {
         this.startSync('Importing snippets');
-        if (!fs.existsSync(path.join(this.codeSyncDir, SNIPPETS))) {
+        let snippetsDirectory = path.join(this.codeSyncDir, SNIPPETS);
+        if (!fs.existsSync(snippetsDirectory)) {
             return;
         }
-        helpers.copy(path.join(this.codeSyncDir, SNIPPETS), helpers.getSnippetsFolderPath());
+        let snippetFiles: string[] = fs.readdirSync(snippetsDirectory);
+        snippetFiles.forEach(s => {
+            if (fs.lstatSync(path.join(snippetsDirectory, s)).isFile()) {
+                if (!helpers.isFileEmpty(path.join(snippetsDirectory, s))) {
+                    helpers.copy(path.join(snippetsDirectory, s), path.join(helpers.getSnippetsFolderPath(), s));
+                }
+            }
+        });
         this.statusBar.reset();
     }
 
