@@ -174,10 +174,18 @@ export class CodeSync {
 
     importSnippets() {
         this.startSync('Importing snippets');
-        if (!fs.existsSync(path.join(this.codeSyncDir, SNIPPETS))) {
+        let snippetsDirectory = path.join(this.codeSyncDir, SNIPPETS);
+        if (!fs.existsSync(snippetsDirectory)) {
             return;
         }
-        helpers.copy(path.join(this.codeSyncDir, SNIPPETS), helpers.getSnippetsFolderPath());
+        let snippetFiles: string[] = fs.readdirSync(snippetsDirectory);
+        snippetFiles.forEach(s => {
+            if (fs.lstatSync(path.join(snippetsDirectory, s)).isFile()) {
+                if (!helpers.isFileEmpty(path.join(snippetsDirectory, s))) {
+                    helpers.copy(path.join(snippetsDirectory, s), path.join(helpers.getSnippetsFolderPath(), s));
+                }
+            }
+        });
         this.statusBar.reset();
     }
 
