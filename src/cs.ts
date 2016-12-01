@@ -109,6 +109,7 @@ export class CodeSync {
         csSettings.externalPath = extPath;
         this.codeSyncDir = extPath;
         this.Settings.Settings = csSettings;
+        this.Settings.ExternalExtensionsPath = path.join(this.codeSyncDir, EXTENSIONS);
         this.Settings.save();
     }
 
