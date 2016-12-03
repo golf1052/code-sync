@@ -109,6 +109,7 @@ export class CodeSyncSettings {
     }
 
     save() {
+        this.ExternalExtensionsPath = path.join(this.settings.externalPath, cs.EXTENSIONS);
         fs.writeFileSync(this.internalPath, JSON.stringify(this.settings, null, 4));
     }
 
