@@ -203,7 +203,13 @@ export function isVersionGreaterThan(a: string, b: string): number {
     }
 }
 
-export function isFileEmpty(path: string) {
+export function isFileEmpty(path: string): boolean {
     let stats: fs.Stats = fs.statSync(path);
     return stats.size == 0;
+}
+
+export function isFileContentEmpty(path: string): boolean {
+    let fileContent: string = fs.readFileSync(path, 'utf8');
+    fileContent = fileContent.trim();
+    return fileContent == '';
 }

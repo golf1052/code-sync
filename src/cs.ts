@@ -8,7 +8,7 @@ import * as helpers from './helpers';
 import * as fs from 'fs';
 var rimraf = require('rimraf');
 
-export const EXTENSIONS = 'extensions.json'
+export const EXTENSIONS = 'extensions.json';
 export const SETTINGS = 'settings.json';
 export const KEYBINDINGS = 'keybindings.json';
 export const SNIPPETS = 'snippets';
@@ -136,7 +136,8 @@ export class CodeSync {
             return;
         }
         let settingsPath: string = path.join(this.codeSyncDir, SETTINGS);
-        if (!helpers.isFileEmpty(settingsPath)) {
+        if (helpers.isFileEmpty(settingsPath) == false &&
+        helpers.isFileContentEmpty(settingsPath) == false) {
             helpers.copy(settingsPath, helpers.getUserSettingsFilePath());
         }
         this.statusBar.reset();
@@ -157,7 +158,8 @@ export class CodeSync {
             return;
         }
         let keybindingsPath: string = path.join(this.codeSyncDir, KEYBINDINGS);
-        if (!helpers.isFileEmpty(keybindingsPath)) {
+        if (helpers.isFileEmpty(keybindingsPath) == false &&
+        helpers.isFileContentEmpty(keybindingsPath) == false) {
             helpers.copy(keybindingsPath, helpers.getKeybindingsFilePath());
         }
         this.statusBar.reset();
@@ -181,7 +183,8 @@ export class CodeSync {
         let snippetFiles: string[] = fs.readdirSync(snippetsDirectory);
         snippetFiles.forEach(s => {
             if (fs.lstatSync(path.join(snippetsDirectory, s)).isFile()) {
-                if (!helpers.isFileEmpty(path.join(snippetsDirectory, s))) {
+                if (helpers.isFileEmpty(path.join(snippetsDirectory, s)) == false &&
+                helpers.isFileContentEmpty(path.join(snippetsDirectory, s)) == false) {
                     helpers.copy(path.join(snippetsDirectory, s), path.join(helpers.getSnippetsFolderPath(), s));
                 }
             }
