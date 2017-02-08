@@ -14,7 +14,7 @@ export const SETTINGS = 'settings.json';
 export const KEYBINDINGS = 'keybindings.json';
 export const SNIPPETS = 'snippets';
 
-export const currentVersion: string = '2.1.2';
+export const currentVersion: string = '2.2.0';
 export let vsCodeExtensionDir: string = helpers.getExtensionDir();
 export let codeSyncExtensionDir: string = path.join(vsCodeExtensionDir, 'golf1052.code-sync-' + currentVersion);
 
