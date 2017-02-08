@@ -12,19 +12,12 @@ export async function activate(context: vscode.ExtensionContext) {
     if (codeSync.Active) {
         await codeSync.checkForSettings();
         if (codeSync.Settings.Settings.autoImport) {
-            if (codeSync.Settings.Settings.importSettings) {
-                codeSync.importSettings();
-            }
-            if (codeSync.Settings.Settings.importKeybindings) {
-                codeSync.importKeybindings();
-            }
-            if (codeSync.Settings.Settings.importSnippets) {
-                codeSync.importSnippets();
-            }
-            if (codeSync.Settings.Settings.importExtensions) {
-                codeSync.importExtensions();
-            }
+            codeSync.importSettings();
+            codeSync.importKeybindings();
+            codeSync.importSnippets();
+            codeSync.importExtensions();
         }
+        codeSync.startFileWatcher();
     }
     else {
         await vscode.window.showErrorMessage('Code was not found on your path, CodeSync is unable to activate!');
@@ -131,18 +124,7 @@ export async function activate(context: vscode.ExtensionContext) {
 export function deactivate() {
     if (codeSync.Active) {
         if (codeSync.Settings.Settings.autoExport) {
-            if (codeSync.Settings.Settings.importSettings) {
-                codeSync.exportSettings();
-            }
-            if (codeSync.Settings.Settings.importKeybindings) {
-                codeSync.exportKeybindings();
-            }
-            if (codeSync.Settings.Settings.importSnippets) {
-                codeSync.exportSnippets();
-            }
-            if (codeSync.Settings.Settings.importExtensions) {
-                codeSync.exportExtensions();
-            }
+            codeSync.exportExtensions();
         }
     }
 }

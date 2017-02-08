@@ -7,6 +7,7 @@ import * as settings from './settings';
 import * as helpers from './helpers';
 import * as fs from 'fs';
 var rimraf = require('rimraf');
+import {FileWatcher} from './file-watcher';
 
 export const EXTENSIONS = 'extensions.json';
 export const SETTINGS = 'settings.json';
@@ -24,6 +25,7 @@ export class CodeSync {
     private statusBar: StatusBarManager;
     private codeSyncSettings: settings.CodeSyncSettings;
     private active: boolean;
+    private watcher: FileWatcher;
 
     constructor(vsCodeExtensionDir: string, codeSyncExtensionDir: string, codeSyncDir: string) {
         this.vsCodeExtensionDir = vsCodeExtensionDir;
@@ -112,6 +114,20 @@ export class CodeSync {
         this.Settings.save();
     }
 
+    startFileWatcher(): void {
+        let files: any = {};
+        if (fs.existsSync(helpers.getUserSettingsFilePath())) {
+            files[helpers.getUserSettingsFilePath()] = this.exportSettings;
+        }
+        if (fs.existsSync(helpers.getKeybindingsFilePath())) {
+            files[helpers.getKeybindingsFilePath()] = this.exportKeybindings;
+        }
+        if (fs.existsSync(helpers.getSnippetsFolderPath())) {
+            files[helpers.getSnippetsFolderPath()] = this.exportSnippets;
+        }
+        this.watcher = new FileWatcher(files, this.Settings);
+    }
+
     importAll() {
         this.startSync('Importing all');
         this.importSettings();
@@ -131,109 +147,125 @@ export class CodeSync {
     }
 
     importSettings() {
-        this.startSync('Importing settings');
-        if (!fs.existsSync(path.join(this.codeSyncDir, SETTINGS))) {
-            return;
-        }
-        let settingsPath: string = path.join(this.codeSyncDir, SETTINGS);
-        if (helpers.isFileEmpty(settingsPath) == false &&
-        helpers.isFileContentEmpty(settingsPath) == false) {
-            helpers.copy(settingsPath, helpers.getUserSettingsFilePath());
-        }
-        this.statusBar.reset();
-    }
-
-    exportSettings() {
-        this.startSync('Exporting settings');
-        if (!fs.existsSync(helpers.getUserSettingsFilePath())) {
-            return;
-        }
-        helpers.copy(helpers.getUserSettingsFilePath(), path.join(this.codeSyncDir, SETTINGS));
-        this.statusBar.reset();
-    }
-
-    importKeybindings() {
-        this.startSync('Importing keybindings');
-        if (!fs.existsSync(path.join(this.codeSyncDir, KEYBINDINGS))) {
-            return;
-        }
-        let keybindingsPath: string = path.join(this.codeSyncDir, KEYBINDINGS);
-        if (helpers.isFileEmpty(keybindingsPath) == false &&
-        helpers.isFileContentEmpty(keybindingsPath) == false) {
-            helpers.copy(keybindingsPath, helpers.getKeybindingsFilePath());
-        }
-        this.statusBar.reset();
-    }
-
-    exportKeybindings() {
-        this.startSync('Exporting keybindings');
-        if (!fs.existsSync(helpers.getKeybindingsFilePath())) {
-            return;
-        }
-        helpers.copy(helpers.getKeybindingsFilePath(), path.join(this.codeSyncDir, KEYBINDINGS));
-        this.statusBar.reset();
-    }
-
-    importSnippets() {
-        this.startSync('Importing snippets');
-        let snippetsDirectory = path.join(this.codeSyncDir, SNIPPETS);
-        if (!fs.existsSync(snippetsDirectory)) {
-            return;
-        }
-        let snippetFiles: string[] = fs.readdirSync(snippetsDirectory);
-        snippetFiles.forEach(s => {
-            if (fs.lstatSync(path.join(snippetsDirectory, s)).isFile()) {
-                if (helpers.isFileEmpty(path.join(snippetsDirectory, s)) == false &&
-                helpers.isFileContentEmpty(path.join(snippetsDirectory, s)) == false) {
-                    helpers.copy(path.join(snippetsDirectory, s), path.join(helpers.getSnippetsFolderPath(), s));
-                }
+        if (this.Settings.Settings.importSettings) {
+            this.startSync('Importing settings');
+            if (!fs.existsSync(path.join(this.codeSyncDir, SETTINGS))) {
+                return;
             }
-        });
-        this.statusBar.reset();
-    }
-
-    exportSnippets() {
-        this.startSync('Exporting snippets');
-        if (!fs.existsSync(helpers.getSnippetsFolderPath())) {
-            return;
-        }
-        helpers.copy(helpers.getSnippetsFolderPath(), path.join(this.codeSyncDir, SNIPPETS));
-        this.statusBar.reset();
-    }
-
-    importExtensions() {
-        this.startSync('Importing extensions');
-        let excluded: string[] = this.Settings.ExcludedExternalPackages;
-        let extensions: string[] = this.Settings.Extensions;
-        let installedAny: boolean = false;
-        extensions.forEach(e => {
-            let val = helpers.installExtension(e);
-            if (val) {
-                installedAny = true;
+            let settingsPath: string = path.join(this.codeSyncDir, SETTINGS);
+            if (helpers.isFileEmpty(settingsPath) == false &&
+            helpers.isFileContentEmpty(settingsPath) == false) {
+                helpers.copy(settingsPath, helpers.getUserSettingsFilePath());
             }
-        });
-        if (installedAny) {
-            this.statusBar.StatusBarText = 'Restart required';
-            this.statusBar.setStop();
-        }
-        else {
             this.statusBar.reset();
         }
     }
 
-    exportExtensions() {
-        this.startSync('Exporting extensions');
-        let excluded: string[] = this.Settings.ExcludedInstalledPackages;
-        let extensions: string[] = [];
-        let e = helpers.getInstalledExtensions();
-        helpers.getInstalledExtensions().forEach(e => {
-            if (excluded.indexOf(e.id) == -1) {
-                extensions.push(e.id);
+    exportSettings = () => {
+        if (this.Settings.Settings.importSettings) {
+            this.startSync('Exporting settings');
+            if (!fs.existsSync(helpers.getUserSettingsFilePath())) {
+                return;
             }
-        });
-        this.Settings.Extensions = extensions;
-        this.Settings.saveExtensions();
-        this.statusBar.reset();
+            helpers.copy(helpers.getUserSettingsFilePath(), path.join(this.codeSyncDir, SETTINGS));
+            this.statusBar.reset();
+        }
+    }
+
+    importKeybindings() {
+        if (this.Settings.Settings.importKeybindings) {
+            this.startSync('Importing keybindings');
+            if (!fs.existsSync(path.join(this.codeSyncDir, KEYBINDINGS))) {
+                return;
+            }
+            let keybindingsPath: string = path.join(this.codeSyncDir, KEYBINDINGS);
+            if (helpers.isFileEmpty(keybindingsPath) == false &&
+            helpers.isFileContentEmpty(keybindingsPath) == false) {
+                helpers.copy(keybindingsPath, helpers.getKeybindingsFilePath());
+            }
+            this.statusBar.reset();
+        }
+    }
+
+    exportKeybindings = () => {
+        if (this.Settings.Settings.importKeybindings) {
+            this.startSync('Exporting keybindings');
+            if (!fs.existsSync(helpers.getKeybindingsFilePath())) {
+                return;
+            }
+            helpers.copy(helpers.getKeybindingsFilePath(), path.join(this.codeSyncDir, KEYBINDINGS));
+            this.statusBar.reset();
+        }   
+    }
+
+    importSnippets() {
+        if (this.Settings.Settings.importSnippets) {
+            this.startSync('Importing snippets');
+            let snippetsDirectory = path.join(this.codeSyncDir, SNIPPETS);
+            if (!fs.existsSync(snippetsDirectory)) {
+                return;
+            }
+            let snippetFiles: string[] = fs.readdirSync(snippetsDirectory);
+            snippetFiles.forEach(s => {
+                if (fs.lstatSync(path.join(snippetsDirectory, s)).isFile()) {
+                    if (helpers.isFileEmpty(path.join(snippetsDirectory, s)) == false &&
+                    helpers.isFileContentEmpty(path.join(snippetsDirectory, s)) == false) {
+                        helpers.copy(path.join(snippetsDirectory, s), path.join(helpers.getSnippetsFolderPath(), s));
+                    }
+                }
+            });
+            this.statusBar.reset();
+        }
+    }
+
+    exportSnippets = () => {
+        if (this.Settings.Settings.importSnippets) {
+            this.startSync('Exporting snippets');
+            if (!fs.existsSync(helpers.getSnippetsFolderPath())) {
+                return;
+            }
+            helpers.copy(helpers.getSnippetsFolderPath(), path.join(this.codeSyncDir, SNIPPETS));
+            this.statusBar.reset();
+        }
+    }
+
+    importExtensions() {
+        if (this.Settings.Settings.importExtensions) {
+            this.startSync('Importing extensions');
+            let excluded: string[] = this.Settings.ExcludedExternalPackages;
+            let extensions: string[] = this.Settings.Extensions;
+            let installedAny: boolean = false;
+            extensions.forEach(e => {
+                let val = helpers.installExtension(e);
+                if (val) {
+                    installedAny = true;
+                }
+            });
+            if (installedAny) {
+                this.statusBar.StatusBarText = 'Restart required';
+                this.statusBar.setStop();
+            }
+            else {
+                this.statusBar.reset();
+            }
+        }
+    }
+
+    exportExtensions() {
+        if (this.Settings.Settings.importExtensions) {
+            this.startSync('Exporting extensions');
+            let excluded: string[] = this.Settings.ExcludedInstalledPackages;
+            let extensions: string[] = [];
+            let e = helpers.getInstalledExtensions();
+            helpers.getInstalledExtensions().forEach(e => {
+                if (excluded.indexOf(e.id) == -1) {
+                    extensions.push(e.id);
+                }
+            });
+            this.Settings.Extensions = extensions;
+            this.Settings.saveExtensions();
+            this.statusBar.reset();
+        }
     }
 
     async addExcludedInstalledPackage() {

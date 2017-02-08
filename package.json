@@ -168,6 +168,8 @@
     "@types/mocha": "^2.2.32"
   },
   "dependencies": {
+    "@types/chokidar": "^1.4.31",
+    "chokidar": "^1.6.1",
     "mkdirp": "^0.5.1",
     "recursive-copy": "^2.0.5",
     "rimraf": "^2.5.4"
