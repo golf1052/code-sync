@@ -7,6 +7,7 @@ import * as settings from './settings';
 import * as helpers from './helpers';
 import * as fs from 'fs';
 var rimraf = require('rimraf');
+import * as chokidar from 'chokidar';
 import {FileWatcher} from './file-watcher';
 
 export const EXTENSIONS = 'extensions.json';
@@ -25,7 +26,8 @@ export class CodeSync {
     private statusBar: StatusBarManager;
     private codeSyncSettings: settings.CodeSyncSettings;
     private active: boolean;
-    private watcher: FileWatcher;
+    private watchedFiles: any;
+    private fileWatcher: FileWatcher;
 
     constructor(vsCodeExtensionDir: string, codeSyncExtensionDir: string, codeSyncDir: string) {
         this.vsCodeExtensionDir = vsCodeExtensionDir;
@@ -114,7 +116,7 @@ export class CodeSync {
         this.Settings.save();
     }
 
-    startFileWatcher(): void {
+    startFileWatcher = () => {
         let files: any = {};
         if (fs.existsSync(helpers.getUserSettingsFilePath())) {
             files[helpers.getUserSettingsFilePath()] = this.exportSettings;
@@ -125,7 +127,7 @@ export class CodeSync {
         if (fs.existsSync(helpers.getSnippetsFolderPath())) {
             files[helpers.getSnippetsFolderPath()] = this.exportSnippets;
         }
-        this.watcher = new FileWatcher(files, this.Settings);
+        this.fileWatcher = new FileWatcher(files, this.Settings);
     }
 
     importAll() {

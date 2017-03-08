@@ -1,22 +1,27 @@
 'use strict';
-import * as watch from 'chokidar';
+import * as chokidar from 'chokidar';
 import * as fs from 'fs';
 import * as helpers from './helpers';
 import * as settings from './settings';
 
 export class FileWatcher {
-    private watcher: watch.FSWatcher;
+    private watchers: chokidar.FSWatcher[];
     private files: any;
     private codeSyncSettings: settings.CodeSyncSettings;
 
     constructor(files: any, codeSyncSettings: settings.CodeSyncSettings) {
+        this.watchers = [];
         this.files = files;
         this.codeSyncSettings = codeSyncSettings;
         let paths: string[] = Object.keys(files);
-        this.watcher = watch.watch(paths, {
-            awaitWriteFinish: true
+        paths.forEach(path => {
+            let watcher: chokidar.FSWatcher = chokidar.watch(path,
+            {
+                awaitWriteFinish: true
+            });
+            watcher.on('change', this.change);
+            this.watchers.push(watcher);
         });
-        this.watcher.on('change', this.change);
     }
 
     change = (path: string, stats: fs.Stats) => {
