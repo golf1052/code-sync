@@ -9,13 +9,15 @@ import * as fs from 'fs';
 var rimraf = require('rimraf');
 import * as chokidar from 'chokidar';
 import {FileWatcher} from './file-watcher';
+import {LocalSettings} from './local-settings';
 
 export const EXTENSIONS = 'extensions.json';
 export const SETTINGS = 'settings.json';
 export const KEYBINDINGS = 'keybindings.json';
 export const SNIPPETS = 'snippets';
+export const LOCAL_SETTINGS = 'local-settings.json';
 
-export const currentVersion: string = '2.2.0';
+export const currentVersion: string = '2.3.0';
 export let vsCodeExtensionDir: string = helpers.getExtensionDir();
 export let codeSyncExtensionDir: string = path.join(vsCodeExtensionDir, 'golf1052.code-sync-' + currentVersion);
 
@@ -26,8 +28,8 @@ export class CodeSync {
     private statusBar: StatusBarManager;
     private codeSyncSettings: settings.CodeSyncSettings;
     private active: boolean;
-    private watchedFiles: any;
     private fileWatcher: FileWatcher;
+    private localSettingsManager: LocalSettings;
 
     constructor(vsCodeExtensionDir: string, codeSyncExtensionDir: string, codeSyncDir: string) {
         this.vsCodeExtensionDir = vsCodeExtensionDir;
@@ -36,6 +38,7 @@ export class CodeSync {
         this.statusBar = new StatusBarManager();
         this.codeSyncSettings = new settings.CodeSyncSettings(path.join(this.codeSyncExtensionDir, SETTINGS), path.join(this.codeSyncDir, EXTENSIONS));
         this.active = false;
+        this.localSettingsManager = new LocalSettings(this.codeSyncExtensionDir);
     }
 
     get Active(): boolean {
@@ -119,13 +122,13 @@ export class CodeSync {
     startFileWatcher = () => {
         let files: any = {};
         if (fs.existsSync(helpers.getUserSettingsFilePath())) {
-            files[helpers.getUserSettingsFilePath()] = this.exportSettings;
+            files[helpers.getUserSettingsFilePath()] = this.exportSettings.bind(this);
         }
         if (fs.existsSync(helpers.getKeybindingsFilePath())) {
-            files[helpers.getKeybindingsFilePath()] = this.exportKeybindings;
+            files[helpers.getKeybindingsFilePath()] = this.exportKeybindings.bind(this);
         }
         if (fs.existsSync(helpers.getSnippetsFolderPath())) {
-            files[helpers.getSnippetsFolderPath()] = this.exportSnippets;
+            files[helpers.getSnippetsFolderPath()] = this.exportSnippets.bind(this);
         }
         this.fileWatcher = new FileWatcher(files, this.Settings);
     }
@@ -148,7 +151,7 @@ export class CodeSync {
         this.statusBar.reset();
     }
 
-    importSettings() {
+    importSettings(): void {
         if (this.Settings.Settings.importSettings) {
             this.startSync('Importing settings');
             if (!fs.existsSync(path.join(this.codeSyncDir, SETTINGS))) {
@@ -157,19 +160,19 @@ export class CodeSync {
             let settingsPath: string = path.join(this.codeSyncDir, SETTINGS);
             if (helpers.isFileEmpty(settingsPath) == false &&
             helpers.isFileContentEmpty(settingsPath) == false) {
-                helpers.copy(settingsPath, helpers.getUserSettingsFilePath());
+                this.localSettingsManager.import(settingsPath, helpers.getUserSettingsFilePath());
             }
             this.statusBar.reset();
         }
     }
 
-    exportSettings = () => {
+    exportSettings(): void {
         if (this.Settings.Settings.importSettings) {
             this.startSync('Exporting settings');
             if (!fs.existsSync(helpers.getUserSettingsFilePath())) {
                 return;
             }
-            helpers.copy(helpers.getUserSettingsFilePath(), path.join(this.codeSyncDir, SETTINGS));
+            this.localSettingsManager.export(helpers.getUserSettingsFilePath(), path.join(this.codeSyncDir, SETTINGS));
             this.statusBar.reset();
         }
     }
@@ -189,7 +192,7 @@ export class CodeSync {
         }
     }
 
-    exportKeybindings = () => {
+    exportKeybindings(): void {
         if (this.Settings.Settings.importKeybindings) {
             this.startSync('Exporting keybindings');
             if (!fs.existsSync(helpers.getKeybindingsFilePath())) {
@@ -220,7 +223,7 @@ export class CodeSync {
         }
     }
 
-    exportSnippets = () => {
+    exportSnippets(): void {
         if (this.Settings.Settings.importSnippets) {
             this.startSync('Exporting snippets');
             if (!fs.existsSync(helpers.getSnippetsFolderPath())) {
@@ -488,11 +491,12 @@ export class CodeSync {
             if (tmpExtension.id == 'golf1052.code-sync') {
                 if (tmpExtension.id == 'golf1052.code-sync' && helpers.isVersionGreaterThan(currentVersion, tmpExtension.version) == 1) {
                     if (fs.existsSync(path.join(this.vsCodeExtensionDir, f, SETTINGS))) {
-                        helpers.copy(path.join(this.vsCodeExtensionDir, f, SETTINGS), path.join(this.codeSyncExtensionDir, SETTINGS));
+                        let oldSettings: settings.Settings = JSON.parse(fs.readFileSync(path.join(this.vsCodeExtensionDir, f, SETTINGS), 'utf8'));
+                        helpers.copy(path.join(this.vsCodeExtensionDir, f, SETTINGS), path.join(oldSettings.externalPath, 'code-sync-settings.json'));
                     }
                 }
             }
-        })
+        });
     }
 
     private emptySyncDir(settingsFilePath: string) {

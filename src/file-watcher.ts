@@ -19,7 +19,9 @@ export class FileWatcher {
             {
                 awaitWriteFinish: true
             });
-            watcher.on('change', this.change);
+            watcher.on('change', (path, stats) => {
+                this.change(path, stats);
+            });
             this.watchers.push(watcher);
         });
     }

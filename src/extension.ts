@@ -11,13 +11,13 @@ export async function activate(context: vscode.ExtensionContext) {
     codeSync.Active = activate;
     if (codeSync.Active) {
         await codeSync.checkForSettings();
+        codeSync.startFileWatcher();
         if (codeSync.Settings.Settings.autoImport) {
             codeSync.importSettings();
             codeSync.importKeybindings();
             codeSync.importSnippets();
             codeSync.importExtensions();
         }
-        codeSync.startFileWatcher();
     }
     else {
         await vscode.window.showErrorMessage('Code was not found on your path, CodeSync is unable to activate!');
