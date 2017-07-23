@@ -213,3 +213,7 @@ export function isFileContentEmpty(path: string): boolean {
     fileContent = fileContent.trim();
     return fileContent == '';
 }
+
+export function getCodePathWarningMessage(): string {
+    return 'Code was not found on your path, CodeSync will be unable to import or export your extensions.';
+}

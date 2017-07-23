@@ -30,6 +30,7 @@ export class CodeSync {
     private active: boolean;
     private fileWatcher: FileWatcher;
     private localSettingsManager: LocalSettings;
+    private canManageExtensions: boolean;
 
     constructor(vsCodeExtensionDir: string, codeSyncExtensionDir: string, codeSyncDir: string) {
         this.vsCodeExtensionDir = vsCodeExtensionDir;
@@ -57,6 +58,14 @@ export class CodeSync {
 
     get Settings(): settings.CodeSyncSettings {
         return this.codeSyncSettings;
+    }
+
+    get CanManageExtensions(): boolean {
+        return this.canManageExtensions;
+    }
+
+    set CanManageExtensions(canManageExtensions: boolean) {
+        this.canManageExtensions = canManageExtensions;
     }
 
     async checkForSettings() {
@@ -138,7 +147,9 @@ export class CodeSync {
         this.importSettings();
         await this.importKeybindings();
         this.importSnippets();
-        this.importExtensions();
+        if (this.CanManageExtensions) {
+            this.importExtensions();
+        }
         this.statusBar.reset();
     }
 
@@ -147,7 +158,9 @@ export class CodeSync {
         this.exportSettings();
         await this.exportKeybindings();
         await this.exportSnippets();
-        this.exportExtensions();
+        if (this.CanManageExtensions) {
+            this.exportExtensions();
+        }
         this.statusBar.reset();
     }
 

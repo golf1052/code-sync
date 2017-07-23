@@ -7,8 +7,11 @@ var codeSync: cs.CodeSync;
 
 export async function activate(context: vscode.ExtensionContext) {
     codeSync = new cs.CodeSync(cs.vsCodeExtensionDir, cs.codeSyncExtensionDir, '');
-    let activate = helpers.isCodeOnPath();
-    codeSync.Active = activate;
+    codeSync.CanManageExtensions = helpers.isCodeOnPath();
+    if (!codeSync.CanManageExtensions) {
+        await vscode.window.showWarningMessage(helpers.getCodePathWarningMessage());
+    }
+    codeSync.Active = true;
     if (codeSync.Active) {
         await codeSync.checkForSettings();
         codeSync.startFileWatcher();
@@ -16,12 +19,10 @@ export async function activate(context: vscode.ExtensionContext) {
             codeSync.importSettings();
             await codeSync.importKeybindings();
             codeSync.importSnippets();
-            codeSync.importExtensions();
+            if (codeSync.CanManageExtensions) {
+                codeSync.importExtensions();
+            }
         }
-    }
-    else {
-        await vscode.window.showErrorMessage('Code was not found on your path, CodeSync is unable to activate!');
-        return;
     }
 
     let importAllDisposable = vscode.commands.registerCommand('extension.importAll', async function() {
@@ -49,10 +50,20 @@ export async function activate(context: vscode.ExtensionContext) {
         await codeSync.exportSnippets();
     });
     let importExtensionsDisposable = vscode.commands.registerCommand('extension.importExtensions', function() {
-        codeSync.importExtensions();
+        if (codeSync.CanManageExtensions) {
+            codeSync.importExtensions();
+        }
+        else {
+            vscode.window.showWarningMessage(helpers.getCodePathWarningMessage());
+        }
     });
     let exportExtensionsDisposable = vscode.commands.registerCommand('extension.exportExtensions', function() {
-        codeSync.exportExtensions();
+        if (codeSync.CanManageExtensions) {
+            codeSync.exportExtensions();
+        }
+        else {
+            vscode.window.showWarningMessage(helpers.getCodePathWarningMessage());
+        }
     });
     let listExcludedInstalledDisposable = vscode.commands.registerCommand('extension.listExcludedInstalled', function() {
         codeSync.displayExcludedInstalledPackages();
@@ -122,7 +133,7 @@ export async function activate(context: vscode.ExtensionContext) {
 }
 
 export function deactivate() {
-    if (codeSync.Active) {
+    if (codeSync.CanManageExtensions) {
         if (codeSync.Settings.Settings.autoExport) {
             codeSync.exportExtensions();
         }
