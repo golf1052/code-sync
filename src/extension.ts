@@ -11,24 +11,24 @@ export async function activate(context: vscode.ExtensionContext) {
     codeSync.Active = activate;
     if (codeSync.Active) {
         await codeSync.checkForSettings();
+        codeSync.startFileWatcher();
         if (codeSync.Settings.Settings.autoImport) {
             codeSync.importSettings();
-            codeSync.importKeybindings();
+            await codeSync.importKeybindings();
             codeSync.importSnippets();
             codeSync.importExtensions();
         }
-        codeSync.startFileWatcher();
     }
     else {
         await vscode.window.showErrorMessage('Code was not found on your path, CodeSync is unable to activate!');
         return;
     }
 
-    let importAllDisposable = vscode.commands.registerCommand('extension.importAll', function() {
-        codeSync.importAll();
+    let importAllDisposable = vscode.commands.registerCommand('extension.importAll', async function() {
+        await codeSync.importAll();
     });
-    let exportAllDisposable = vscode.commands.registerCommand('extension.exportAll', function() {
-        codeSync.exportAll();
+    let exportAllDisposable = vscode.commands.registerCommand('extension.exportAll', async function() {
+        await codeSync.exportAll();
     });
     let importSettingsDisposable = vscode.commands.registerCommand('extension.importSettings', function() {
         codeSync.importSettings();
@@ -36,17 +36,17 @@ export async function activate(context: vscode.ExtensionContext) {
     let exportSettingsDisposable = vscode.commands.registerCommand('extension.exportSettings', function() {
         codeSync.exportSettings();
     });
-    let importKeybindingsDisposable = vscode.commands.registerCommand('extension.importKeybindings', function() {
-        codeSync.importKeybindings();
+    let importKeybindingsDisposable = vscode.commands.registerCommand('extension.importKeybindings', async function() {
+        await codeSync.importKeybindings();
     });
-    let exportKeybindingsDisposable = vscode.commands.registerCommand('extension.exportKeybindings', function() {
-        codeSync.exportKeybindings();
+    let exportKeybindingsDisposable = vscode.commands.registerCommand('extension.exportKeybindings', async function() {
+        await codeSync.exportKeybindings();
     });
     let importSnippetsDisposable = vscode.commands.registerCommand('extension.importSnippets', function() {
         codeSync.importSnippets();
     });
-    let exportSnippetsDisposable = vscode.commands.registerCommand('extension.exportSnippets', function() {
-        codeSync.exportSnippets();
+    let exportSnippetsDisposable = vscode.commands.registerCommand('extension.exportSnippets', async function() {
+        await codeSync.exportSnippets();
     });
     let importExtensionsDisposable = vscode.commands.registerCommand('extension.importExtensions', function() {
         codeSync.importExtensions();

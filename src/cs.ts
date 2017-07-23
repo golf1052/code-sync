@@ -9,13 +9,15 @@ import * as fs from 'fs';
 var rimraf = require('rimraf');
 import * as chokidar from 'chokidar';
 import {FileWatcher} from './file-watcher';
+import {LocalSettings} from './local-settings';
 
 export const EXTENSIONS = 'extensions.json';
 export const SETTINGS = 'settings.json';
 export const KEYBINDINGS = 'keybindings.json';
 export const SNIPPETS = 'snippets';
+export const LOCAL_SETTINGS = 'local-settings.json';
 
-export const currentVersion: string = '2.2.0';
+export const currentVersion: string = '2.3.0';
 export let vsCodeExtensionDir: string = helpers.getExtensionDir();
 export let codeSyncExtensionDir: string = path.join(vsCodeExtensionDir, 'golf1052.code-sync-' + currentVersion);
 
@@ -26,8 +28,8 @@ export class CodeSync {
     private statusBar: StatusBarManager;
     private codeSyncSettings: settings.CodeSyncSettings;
     private active: boolean;
-    private watchedFiles: any;
     private fileWatcher: FileWatcher;
+    private localSettingsManager: LocalSettings;
 
     constructor(vsCodeExtensionDir: string, codeSyncExtensionDir: string, codeSyncDir: string) {
         this.vsCodeExtensionDir = vsCodeExtensionDir;
@@ -36,6 +38,7 @@ export class CodeSync {
         this.statusBar = new StatusBarManager();
         this.codeSyncSettings = new settings.CodeSyncSettings(path.join(this.codeSyncExtensionDir, SETTINGS), path.join(this.codeSyncDir, EXTENSIONS));
         this.active = false;
+        this.localSettingsManager = new LocalSettings(this.codeSyncExtensionDir);
     }
 
     get Active(): boolean {
@@ -119,36 +122,36 @@ export class CodeSync {
     startFileWatcher = () => {
         let files: any = {};
         if (fs.existsSync(helpers.getUserSettingsFilePath())) {
-            files[helpers.getUserSettingsFilePath()] = this.exportSettings;
+            files[helpers.getUserSettingsFilePath()] = this.exportSettings.bind(this);
         }
         if (fs.existsSync(helpers.getKeybindingsFilePath())) {
-            files[helpers.getKeybindingsFilePath()] = this.exportKeybindings;
+            files[helpers.getKeybindingsFilePath()] = this.exportKeybindings.bind(this);
         }
         if (fs.existsSync(helpers.getSnippetsFolderPath())) {
-            files[helpers.getSnippetsFolderPath()] = this.exportSnippets;
+            files[helpers.getSnippetsFolderPath()] = this.exportSnippets.bind(this);
         }
         this.fileWatcher = new FileWatcher(files, this.Settings);
     }
 
-    importAll() {
+    async importAll() {
         this.startSync('Importing all');
         this.importSettings();
-        this.importKeybindings();
+        await this.importKeybindings();
         this.importSnippets();
         this.importExtensions();
         this.statusBar.reset();
     }
 
-    exportAll() {
+    async exportAll() {
         this.startSync('Exporting all');
         this.exportSettings();
-        this.exportKeybindings();
-        this.exportSnippets();
+        await this.exportKeybindings();
+        await this.exportSnippets();
         this.exportExtensions();
         this.statusBar.reset();
     }
 
-    importSettings() {
+    importSettings(): void {
         if (this.Settings.Settings.importSettings) {
             this.startSync('Importing settings');
             if (!fs.existsSync(path.join(this.codeSyncDir, SETTINGS))) {
@@ -157,24 +160,24 @@ export class CodeSync {
             let settingsPath: string = path.join(this.codeSyncDir, SETTINGS);
             if (helpers.isFileEmpty(settingsPath) == false &&
             helpers.isFileContentEmpty(settingsPath) == false) {
-                helpers.copy(settingsPath, helpers.getUserSettingsFilePath());
+                this.localSettingsManager.import(settingsPath, helpers.getUserSettingsFilePath());
             }
             this.statusBar.reset();
         }
     }
 
-    exportSettings = () => {
+    exportSettings(): void {
         if (this.Settings.Settings.importSettings) {
             this.startSync('Exporting settings');
             if (!fs.existsSync(helpers.getUserSettingsFilePath())) {
                 return;
             }
-            helpers.copy(helpers.getUserSettingsFilePath(), path.join(this.codeSyncDir, SETTINGS));
+            this.localSettingsManager.export(helpers.getUserSettingsFilePath(), path.join(this.codeSyncDir, SETTINGS));
             this.statusBar.reset();
         }
     }
 
-    importKeybindings() {
+    async importKeybindings() {
         if (this.Settings.Settings.importKeybindings) {
             this.startSync('Importing keybindings');
             if (!fs.existsSync(path.join(this.codeSyncDir, KEYBINDINGS))) {
@@ -183,19 +186,19 @@ export class CodeSync {
             let keybindingsPath: string = path.join(this.codeSyncDir, KEYBINDINGS);
             if (helpers.isFileEmpty(keybindingsPath) == false &&
             helpers.isFileContentEmpty(keybindingsPath) == false) {
-                helpers.copy(keybindingsPath, helpers.getKeybindingsFilePath());
+                await helpers.copy(keybindingsPath, helpers.getKeybindingsFilePath());
             }
             this.statusBar.reset();
         }
     }
 
-    exportKeybindings = () => {
+    async exportKeybindings() {
         if (this.Settings.Settings.importKeybindings) {
             this.startSync('Exporting keybindings');
             if (!fs.existsSync(helpers.getKeybindingsFilePath())) {
                 return;
             }
-            helpers.copy(helpers.getKeybindingsFilePath(), path.join(this.codeSyncDir, KEYBINDINGS));
+            await helpers.copy(helpers.getKeybindingsFilePath(), path.join(this.codeSyncDir, KEYBINDINGS));
             this.statusBar.reset();
         }   
     }
@@ -208,11 +211,11 @@ export class CodeSync {
                 return;
             }
             let snippetFiles: string[] = fs.readdirSync(snippetsDirectory);
-            snippetFiles.forEach(s => {
+            snippetFiles.forEach(async s => {
                 if (fs.lstatSync(path.join(snippetsDirectory, s)).isFile()) {
                     if (helpers.isFileEmpty(path.join(snippetsDirectory, s)) == false &&
                     helpers.isFileContentEmpty(path.join(snippetsDirectory, s)) == false) {
-                        helpers.copy(path.join(snippetsDirectory, s), path.join(helpers.getSnippetsFolderPath(), s));
+                        await helpers.copy(path.join(snippetsDirectory, s), path.join(helpers.getSnippetsFolderPath(), s));
                     }
                 }
             });
@@ -220,13 +223,13 @@ export class CodeSync {
         }
     }
 
-    exportSnippets = () => {
+    async exportSnippets() {
         if (this.Settings.Settings.importSnippets) {
             this.startSync('Exporting snippets');
             if (!fs.existsSync(helpers.getSnippetsFolderPath())) {
                 return;
             }
-            helpers.copy(helpers.getSnippetsFolderPath(), path.join(this.codeSyncDir, SNIPPETS));
+            await helpers.copy(helpers.getSnippetsFolderPath(), path.join(this.codeSyncDir, SNIPPETS));
             this.statusBar.reset();
         }
     }
@@ -481,18 +484,19 @@ export class CodeSync {
         });
     }
 
-    private migrateSettings() {
+    private migrateSettings(): void {
         let folders: string[] = fs.readdirSync(this.vsCodeExtensionDir);
-        folders.forEach(f => {
+        folders.forEach(async f => {
             let tmpExtension = helpers.getFolderExtensionInfo(f);
             if (tmpExtension.id == 'golf1052.code-sync') {
                 if (tmpExtension.id == 'golf1052.code-sync' && helpers.isVersionGreaterThan(currentVersion, tmpExtension.version) == 1) {
                     if (fs.existsSync(path.join(this.vsCodeExtensionDir, f, SETTINGS))) {
-                        helpers.copy(path.join(this.vsCodeExtensionDir, f, SETTINGS), path.join(this.codeSyncExtensionDir, SETTINGS));
+                        let oldSettings: settings.Settings = JSON.parse(fs.readFileSync(path.join(this.vsCodeExtensionDir, f, SETTINGS), 'utf8'));
+                        await helpers.copy(path.join(this.vsCodeExtensionDir, f, SETTINGS), path.join(codeSyncExtensionDir, SETTINGS));
                     }
                 }
             }
-        })
+        });
     }
 
     private emptySyncDir(settingsFilePath: string) {
