@@ -7,6 +7,7 @@ import * as child_process from 'child_process';
 import * as cs from './cs';
 var recursive_copy = require('recursive-copy');
 var mkdirp = require('mkdirp');
+import * as json from 'comment-json';
 
 export interface FolderExtension {
     id: string;
@@ -216,4 +217,12 @@ export function isFileContentEmpty(path: string): boolean {
 
 export function getCodePathWarningMessage(): string {
     return 'Code was not found on your path, CodeSync will be unable to import or export your extensions.';
+}
+
+export function parseJson(str: string): any {
+    return json.parse(str);
+}
+
+export function stringifyJson(obj: any): string {
+    return json.stringify(obj, null, 4);
 }

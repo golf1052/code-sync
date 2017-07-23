@@ -504,7 +504,6 @@ export class CodeSync {
             if (tmpExtension.id == 'golf1052.code-sync') {
                 if (tmpExtension.id == 'golf1052.code-sync' && helpers.isVersionGreaterThan(currentVersion, tmpExtension.version) == 1) {
                     if (fs.existsSync(path.join(this.vsCodeExtensionDir, f, SETTINGS))) {
-                        let oldSettings: settings.Settings = JSON.parse(fs.readFileSync(path.join(this.vsCodeExtensionDir, f, SETTINGS), 'utf8'));
                         await helpers.copy(path.join(this.vsCodeExtensionDir, f, SETTINGS), path.join(codeSyncExtensionDir, SETTINGS));
                     }
                 }
@@ -515,7 +514,7 @@ export class CodeSync {
     private emptySyncDir(settingsFilePath: string) {
         let settings: any = null;
         if (fs.existsSync(settingsFilePath)) {
-            settings = JSON.parse(fs.readFileSync(settingsFilePath, 'utf8'));
+            settings = helpers.parseJson(fs.readFileSync(settingsFilePath, 'utf8'));
         }
         try {
             if (fs.existsSync(settings.externalPath)) {
