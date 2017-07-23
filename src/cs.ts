@@ -133,20 +133,20 @@ export class CodeSync {
         this.fileWatcher = new FileWatcher(files, this.Settings);
     }
 
-    importAll() {
+    async importAll() {
         this.startSync('Importing all');
         this.importSettings();
-        this.importKeybindings();
+        await this.importKeybindings();
         this.importSnippets();
         this.importExtensions();
         this.statusBar.reset();
     }
 
-    exportAll() {
+    async exportAll() {
         this.startSync('Exporting all');
         this.exportSettings();
-        this.exportKeybindings();
-        this.exportSnippets();
+        await this.exportKeybindings();
+        await this.exportSnippets();
         this.exportExtensions();
         this.statusBar.reset();
     }
@@ -177,7 +177,7 @@ export class CodeSync {
         }
     }
 
-    importKeybindings() {
+    async importKeybindings() {
         if (this.Settings.Settings.importKeybindings) {
             this.startSync('Importing keybindings');
             if (!fs.existsSync(path.join(this.codeSyncDir, KEYBINDINGS))) {
@@ -186,19 +186,19 @@ export class CodeSync {
             let keybindingsPath: string = path.join(this.codeSyncDir, KEYBINDINGS);
             if (helpers.isFileEmpty(keybindingsPath) == false &&
             helpers.isFileContentEmpty(keybindingsPath) == false) {
-                helpers.copy(keybindingsPath, helpers.getKeybindingsFilePath());
+                await helpers.copy(keybindingsPath, helpers.getKeybindingsFilePath());
             }
             this.statusBar.reset();
         }
     }
 
-    exportKeybindings(): void {
+    async exportKeybindings() {
         if (this.Settings.Settings.importKeybindings) {
             this.startSync('Exporting keybindings');
             if (!fs.existsSync(helpers.getKeybindingsFilePath())) {
                 return;
             }
-            helpers.copy(helpers.getKeybindingsFilePath(), path.join(this.codeSyncDir, KEYBINDINGS));
+            await helpers.copy(helpers.getKeybindingsFilePath(), path.join(this.codeSyncDir, KEYBINDINGS));
             this.statusBar.reset();
         }   
     }
@@ -211,11 +211,11 @@ export class CodeSync {
                 return;
             }
             let snippetFiles: string[] = fs.readdirSync(snippetsDirectory);
-            snippetFiles.forEach(s => {
+            snippetFiles.forEach(async s => {
                 if (fs.lstatSync(path.join(snippetsDirectory, s)).isFile()) {
                     if (helpers.isFileEmpty(path.join(snippetsDirectory, s)) == false &&
                     helpers.isFileContentEmpty(path.join(snippetsDirectory, s)) == false) {
-                        helpers.copy(path.join(snippetsDirectory, s), path.join(helpers.getSnippetsFolderPath(), s));
+                        await helpers.copy(path.join(snippetsDirectory, s), path.join(helpers.getSnippetsFolderPath(), s));
                     }
                 }
             });
@@ -223,13 +223,13 @@ export class CodeSync {
         }
     }
 
-    exportSnippets(): void {
+    async exportSnippets() {
         if (this.Settings.Settings.importSnippets) {
             this.startSync('Exporting snippets');
             if (!fs.existsSync(helpers.getSnippetsFolderPath())) {
                 return;
             }
-            helpers.copy(helpers.getSnippetsFolderPath(), path.join(this.codeSyncDir, SNIPPETS));
+            await helpers.copy(helpers.getSnippetsFolderPath(), path.join(this.codeSyncDir, SNIPPETS));
             this.statusBar.reset();
         }
     }
@@ -484,15 +484,15 @@ export class CodeSync {
         });
     }
 
-    private migrateSettings() {
+    private migrateSettings(): void {
         let folders: string[] = fs.readdirSync(this.vsCodeExtensionDir);
-        folders.forEach(f => {
+        folders.forEach(async f => {
             let tmpExtension = helpers.getFolderExtensionInfo(f);
             if (tmpExtension.id == 'golf1052.code-sync') {
                 if (tmpExtension.id == 'golf1052.code-sync' && helpers.isVersionGreaterThan(currentVersion, tmpExtension.version) == 1) {
                     if (fs.existsSync(path.join(this.vsCodeExtensionDir, f, SETTINGS))) {
                         let oldSettings: settings.Settings = JSON.parse(fs.readFileSync(path.join(this.vsCodeExtensionDir, f, SETTINGS), 'utf8'));
-                        helpers.copy(path.join(this.vsCodeExtensionDir, f, SETTINGS), path.join(oldSettings.externalPath, 'code-sync-settings.json'));
+                        await helpers.copy(path.join(this.vsCodeExtensionDir, f, SETTINGS), path.join(codeSyncExtensionDir, SETTINGS));
                     }
                 }
             }

@@ -61,11 +61,11 @@ export function getSnippetsFolderPath(): string {
     return path.join(getCodeSettingsFolderPath(), cs.SNIPPETS + '/');
 }
 
-export function copy(src: string, dest: string) {
-    var options = {
+export async function copy(src: string, dest: string) {
+    var options: any = {
         overwrite: true
     };
-    recursive_copy(src, dest, options);
+    await recursive_copy(src, dest, options);
 }
 
 export function getDir(path: string): string {

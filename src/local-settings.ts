@@ -27,6 +27,9 @@ export class LocalSettings {
     export(internalSettingsPath: string, externalSettingsPath: string): void {
         let localSettingsPath: string = path.join(this.codeSyncExtensionDir, LOCAL_SETTINGS);
         let settings: any = JSON.parse(fs.readFileSync(internalSettingsPath, 'utf8'));
+        if (!fs.existsSync(localSettingsPath)) {
+            fs.writeFileSync(localSettingsPath, JSON.stringify({}, null, 4));
+        }
         if (fs.existsSync(localSettingsPath)) {
             let localSettings: any = JSON.parse(fs.readFileSync(localSettingsPath, 'utf8'));
             let localSettingsKeys: string[] = Object.keys(localSettings);

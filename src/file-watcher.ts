@@ -17,7 +17,10 @@ export class FileWatcher {
         paths.forEach(path => {
             let watcher: chokidar.FSWatcher = chokidar.watch(path,
             {
-                awaitWriteFinish: true
+                awaitWriteFinish: {
+                    stabilityThreshold: 2000,
+                    pollInterval: 100
+                }
             });
             watcher.on('change', (path, stats) => {
                 this.change(path, stats);
