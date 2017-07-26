@@ -32,7 +32,7 @@ export class LocalSettings {
             fs.writeFileSync(localSettingsPath, helpers.stringifyJson({}));
         }
         if (fs.existsSync(localSettingsPath)) {
-            let localSettings: any = JSON.parse(fs.readFileSync(localSettingsPath, 'utf8'));
+            let localSettings: any = helpers.parseJson(fs.readFileSync(localSettingsPath, 'utf8'));
             let localSettingsKeys: string[] = Object.keys(localSettings);
             localSettingsKeys.forEach(key => {
                 delete settings[key];
