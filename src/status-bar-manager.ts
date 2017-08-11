@@ -5,6 +5,7 @@ export class StatusBarManager {
     private statusBar: vscode.StatusBarItem;
     private statusBarText: string;
     private icons: string[];
+    private visible: boolean;
 
     private package: string = '$(package)';
     private check: string = '$(check)';
@@ -17,6 +18,7 @@ export class StatusBarManager {
         this.statusBarText = '';
         this.icons = [];
         this.setCheck();
+        this.visible = false;
     }
 
     get StatusBarText(): string {
@@ -30,10 +32,22 @@ export class StatusBarManager {
 
     show() {
         this.statusBar.show();
+        this.visible = true;
     }
 
     hide() {
         this.statusBar.hide();
+        this.visible = false;
+    }
+
+    toggle(): boolean {
+        if (this.visible) {
+            this.hide();
+        }
+        else {
+            this.show();
+        }
+        return this.visible;
     }
 
     reset() {

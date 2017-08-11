@@ -18,7 +18,7 @@ export const KEYBINDINGS = 'keybindings.json';
 export const SNIPPETS = 'snippets';
 export const LOCAL_SETTINGS = 'local-settings.json';
 
-export const currentVersion: string = '2.3.2';
+export const currentVersion: string = '2.4.0';
 export let vsCodeExtensionDir: string = helpers.getExtensionDir();
 export let codeSyncExtensionDir: string = path.join(vsCodeExtensionDir, 'golf1052.code-sync-' + currentVersion);
 
@@ -71,11 +71,26 @@ export class CodeSync {
         this.canManageExtensions = canManageExtensions;
     }
 
+    toggleStatusBarIcon(): void {
+        let settings = this.Settings.Settings;
+        let visible = this.statusBar.toggle();
+        settings.showStatusBarIcon = visible;
+        this.Settings.Settings = settings;
+        this.Settings.save();
+    }
+
+    setStatusBarIcon(): void {
+        let settings = this.Settings.Settings;
+        if (!settings.showStatusBarIcon) {
+            this.statusBar.hide();
+        }
+    }
+
     async checkForSettings() {
         this.logger.appendLine('Checking settings');
         this.statusBar.StatusBarText = 'Checking settings';
         this.checkForOldSettings();
-        this.migrateSettings();
+        await this.migrateSettings();
         let extensionDir = helpers.getDir(this.codeSyncExtensionDir);
         // if settings don't already exist
         if (!fs.existsSync(path.join(extensionDir, SETTINGS))) {
@@ -91,6 +106,7 @@ export class CodeSync {
                 importKeybindings: true,
                 importSnippets: true,
                 importExtensions: true,
+                showStatusBarIcon: true,
                 excluded: {
                     installed: [],
                     external: []
@@ -159,7 +175,7 @@ export class CodeSync {
         this.startSync('Importing all');
         this.importSettings();
         await this.importKeybindings();
-        this.importSnippets();
+        await this.importSnippets();
         if (this.CanManageExtensions) {
             this.importExtensions();
         }
@@ -237,7 +253,7 @@ export class CodeSync {
         }   
     }
 
-    importSnippets() {
+    async importSnippets() {
         if (this.Settings.Settings.importSnippets) {
             this.logger.appendLine('Importing snippets');
             this.startSync('Importing snippets');
@@ -248,14 +264,14 @@ export class CodeSync {
                 return;
             }
             let snippetFiles: string[] = fs.readdirSync(snippetsDirectory);
-            snippetFiles.forEach(async s => {
-                if (fs.lstatSync(path.join(snippetsDirectory, s)).isFile()) {
+            for (let i = 0; i < snippetFiles.length; i++) {
+                let s = snippetFiles[i];if (fs.lstatSync(path.join(snippetsDirectory, s)).isFile()) {
                     if (helpers.isFileEmpty(path.join(snippetsDirectory, s)) == false &&
                     helpers.isFileContentEmpty(path.join(snippetsDirectory, s)) == false) {
                         await helpers.copy(path.join(snippetsDirectory, s), path.join(helpers.getSnippetsFolderPath(), s));
                     }
                 }
-            });
+            }
             this.statusBar.reset();
             this.logger.appendLine('Finished importing snippets.');
         }
@@ -527,9 +543,10 @@ export class CodeSync {
         });
     }
 
-    private migrateSettings(): void {
+    private async migrateSettings(): Promise<void> {
         let folders: string[] = fs.readdirSync(this.vsCodeExtensionDir);
-        folders.forEach(async f => {
+        for (let i = 0; i < folders.length; i++) {
+            let f = folders[i];
             let tmpExtension = helpers.getFolderExtensionInfo(f);
             if (tmpExtension.id == 'golf1052.code-sync') {
                 if (tmpExtension.id == 'golf1052.code-sync' && helpers.isVersionGreaterThan(currentVersion, tmpExtension.version) == 1) {
@@ -542,7 +559,7 @@ export class CodeSync {
                     }
                 }
             }
-        });
+        }
     }
 
     private emptySyncDir(settingsFilePath: string) {

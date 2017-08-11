@@ -2,7 +2,7 @@
   "name": "code-sync",
   "displayName": "CodeSync",
   "description": "Sync VSCode extensions using your favorite file synchronization service (OneDrive, Dropbox, Google Drive, etc.)",
-  "version": "2.3.2",
+  "version": "2.4.0",
   "publisher": "golf1052",
   "keywords": [
     "sync",
@@ -40,118 +40,123 @@
     "commands": [
       {
         "category": "CodeSync",
-        "command": "extension.importAll",
+        "command": "codeSync.importAll",
         "title": "Import all"
       },
       {
         "category": "CodeSync",
-        "command": "extension.exportAll",
+        "command": "codeSync.exportAll",
         "title": "Export all"
       },
       {
         "category": "CodeSync",
-        "command": "extension.importSettings",
+        "command": "codeSync.importSettings",
         "title": "Import settings"
       },
       {
         "category": "CodeSync",
-        "command": "extension.exportSettings",
+        "command": "codeSync.exportSettings",
         "title": "Export settings"
       },
       {
         "category": "CodeSync",
-        "command": "extension.importKeybindings",
+        "command": "codeSync.importKeybindings",
         "title": "Import keybindings"
       },
       {
         "category": "CodeSync",
-        "command": "extension.exportKeybindings",
+        "command": "codeSync.exportKeybindings",
         "title": "Export keybindings"
       },
       {
         "category": "CodeSync",
-        "command": "extension.importSnippets",
+        "command": "codeSync.importSnippets",
         "title": "Import snippets"
       },
       {
         "category": "CodeSync",
-        "command": "extension.exportSnippets",
+        "command": "codeSync.exportSnippets",
         "title": "Export snippets"
       },
       {
         "category": "CodeSync",
-        "command": "extension.importExtensions",
+        "command": "codeSync.importExtensions",
         "title": "Import extensions"
       },
       {
         "category": "CodeSync",
-        "command": "extension.exportExtensions",
+        "command": "codeSync.exportExtensions",
         "title": "Export extensions"
       },
       {
         "category": "CodeSync",
-        "command": "extension.listExcludedInstalled",
+        "command": "codeSync.listExcludedInstalled",
         "title": "List excluded installed extensions"
       },
       {
         "category": "CodeSync",
-        "command": "extension.listExcludedExternal",
+        "command": "codeSync.listExcludedExternal",
         "title": "List excluded external extensions"
       },
       {
         "category": "CodeSync",
-        "command": "extension.addExcludedInstalled",
+        "command": "codeSync.addExcludedInstalled",
         "title": "Exclude an installed extension"
       },
       {
         "category": "CodeSync",
-        "command": "extension.addExcludedExternal",
+        "command": "codeSync.addExcludedExternal",
         "title": "Exclude an external extension"
       },
       {
         "category": "CodeSync",
-        "command": "extension.removeExcludedInstalled",
+        "command": "codeSync.removeExcludedInstalled",
         "title": "Remove an exclusion - Installed"
       },
       {
         "category": "CodeSync",
-        "command": "extension.removeExcludedExternal",
+        "command": "codeSync.removeExcludedExternal",
         "title": "Remove an exclusion - External"
       },
       {
         "category": "CodeSync",
-        "command": "extension.toggleAutoImport",
+        "command": "codeSync.toggleAutoImport",
         "title": "Toggle auto import"
       },
       {
         "category": "CodeSync",
-        "command": "extension.toggleAutoExport",
+        "command": "codeSync.toggleAutoExport",
         "title": "Toggle auto export"
       },
       {
         "category": "CodeSync",
-        "command": "extension.toggleImportSettings",
+        "command": "codeSync.toggleImportSettings",
         "title": "Toggle import/export settings"
       },
       {
         "category": "CodeSync",
-        "command": "extension.toggleImportKeybindings",
+        "command": "codeSync.toggleImportKeybindings",
         "title": "Toggle import/export keybindings"
       },
       {
         "category": "CodeSync",
-        "command": "extension.toggleImportSnippets",
+        "command": "codeSync.toggleImportSnippets",
         "title": "Toggle import/export snippets"
       },
       {
         "category": "CodeSync",
-        "command": "extension.toggleImportExtensions",
+        "command": "codeSync.toggleImportExtensions",
         "title": "Toggle import/export extensions"
       },
       {
         "category": "CodeSync",
-        "command": "extension.setSyncPath",
+        "command": "codeSync.setSyncPath",
         "title": "Set external sync path"
+      },
+      {
+        "category": "CodeSync",
+        "command": "codeSync.toggleStatusBar",
+        "title": "Toggle status bar icon"
       }
     ]
   },

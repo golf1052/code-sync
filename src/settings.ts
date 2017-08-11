@@ -15,6 +15,7 @@ export interface Settings {
     importKeybindings: boolean;
     importSnippets: boolean;
     importExtensions: boolean;
+    showStatusBarIcon: boolean;
     excluded: ExcludedPackages;
 }
 
