@@ -1,6 +1,9 @@
 # CodeSync
 A VSCode extension that syncs extensions, settings, snippets, and keybindings using your favorite file synchronization service (OneDrive, Dropbox, Google Drive, etc.)
 
+## Toggle Status Bar Icon
+With 2.4.0 you can now toggle the CodeSync status bar icon. After upgrading to this version if you do not see the status bar icon open the Command Palette and run **CodeSync: Toggle status bar icon** and it will appear again.
+
 ## Local Settings
 With 2.3.0 CodeSync brings support for local settings. Need a specific setting to be different between your computers? This feature is for you. Here's how to use it:
 
@@ -41,6 +44,8 @@ With 2.3.0 CodeSync brings support for local settings. Need a specific setting t
 - Toggle import/export keybindings: Toggle auto importing/exporting of keybindings.
 - Toggle import/export snippets: Toggle auto importing/exporting of snippets.
 - Toggle import/export extensions: Toggle auto importing/exporting of extensions.
+- Set external sync path: Set the external sync path.
+- Toggle status bar icon: Toggle the CodeSync status bar icon.
 
 ## Uninstalling Extensions
 Currently there is no way for CodeSync to know when you have uninstalled an extension. When you uninstall an extension in VSCode it still registers the extension as installed until VSCode is restarted. Because of this when you exit VSCode, CodeSync will export the incorrect list of extensions. When you launch VSCode again CodeSync will reinstall the extension you installed. [There is an open issue in the VSCode repo about this](https://github.com/Microsoft/vscode/issues/14444). In the meantime here's a workaround:
