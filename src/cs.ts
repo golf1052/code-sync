@@ -550,12 +550,20 @@ export class CodeSync {
             let tmpExtension = helpers.getFolderExtensionInfo(f);
             if (tmpExtension.id == 'golf1052.code-sync') {
                 if (tmpExtension.id == 'golf1052.code-sync' && helpers.isVersionGreaterThan(currentVersion, tmpExtension.version) == 1) {
+                    this.logger.appendLine(`Migrating stuff. Previous version: ${tmpExtension.version}. Current version: ${currentVersion}.`);
                     if (fs.existsSync(path.join(this.vsCodeExtensionDir, f, SETTINGS))) {
-                        this.logger.appendLine(`Migrating settings. Previous version: ${tmpExtension.version}. Current version: ${currentVersion}.`);
+                        this.logger.appendLine(`Migrating settings.`);
                         let oldSettings = path.join(this.vsCodeExtensionDir, f, SETTINGS);
                         let newSettings = path.join(codeSyncExtensionDir, SETTINGS);
                         this.logger.appendLine(`Previous file: ${oldSettings}. New file: ${newSettings}.`)
                         await helpers.copy(oldSettings, newSettings);
+                    }
+                    if (fs.existsSync(path.join(this.vsCodeExtensionDir, f, LOCAL_SETTINGS))) {
+                        this.logger.appendLine(`Migrating local settings.`);
+                        let oldLocalSettings = path.join(this.vsCodeExtensionDir, f, LOCAL_SETTINGS);
+                        let newLocalSettings = path.join(codeSyncExtensionDir, LOCAL_SETTINGS);
+                        this.logger.appendLine(`Previous file: ${oldLocalSettings}. New file: ${newLocalSettings}.`);
+                        await helpers.copy(oldLocalSettings, newLocalSettings);
                     }
                 }
             }
