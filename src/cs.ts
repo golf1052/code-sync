@@ -10,6 +10,7 @@ var rimraf = require('rimraf');
 import * as chokidar from 'chokidar';
 import {FileWatcher} from './file-watcher';
 import {LocalSettings} from './local-settings';
+import {Logger} from './logger';
 
 export const EXTENSIONS = 'extensions.json';
 export const SETTINGS = 'settings.json';
@@ -31,8 +32,10 @@ export class CodeSync {
     private fileWatcher: FileWatcher;
     private localSettingsManager: LocalSettings;
     private canManageExtensions: boolean;
+    private logger: Logger;
 
     constructor(vsCodeExtensionDir: string, codeSyncExtensionDir: string, codeSyncDir: string) {
+        this.logger = new Logger('cs');
         this.vsCodeExtensionDir = vsCodeExtensionDir;
         this.codeSyncExtensionDir = codeSyncExtensionDir;
         this.codeSyncDir = codeSyncDir;
@@ -69,12 +72,14 @@ export class CodeSync {
     }
 
     async checkForSettings() {
+        this.logger.appendLine('Checking settings');
         this.statusBar.StatusBarText = 'Checking settings';
         this.checkForOldSettings();
         this.migrateSettings();
         let extensionDir = helpers.getDir(this.codeSyncExtensionDir);
         // if settings don't already exist
         if (!fs.existsSync(path.join(extensionDir, SETTINGS))) {
+            this.logger.appendLine(`Could not find settings in ${path.join(extensionDir, SETTINGS)}. Creating...`);
             // we need to create settings on first launch because when we call this.Settings.Settings
             // we're going to try to read settings that don't exist yet
             let tmpSettings: settings.Settings = {
@@ -98,11 +103,17 @@ export class CodeSync {
         }
         let csSettings: settings.Settings = this.Settings.Settings;
         this.codeSyncDir = csSettings.externalPath;
-        this.Settings.ExternalExtensionsPath = path.join(this.codeSyncDir, EXTENSIONS);
+        let externalExtensionsPath = path.join(this.codeSyncDir, EXTENSIONS);
+        this.logger.appendLine(`Setting external extensions path as ${externalExtensionsPath}.`);
+        this.Settings.ExternalExtensionsPath = externalExtensionsPath;
         if (!fs.existsSync(this.codeSyncDir)) {
+            this.logger.appendLine(`CodeSync external sync directory isn't there?`);
+            this.logger.appendLine(`Creating external sync path directory: ${this.codeSyncDir}.`);
             helpers.getDir(this.codeSyncDir);
         }
         this.statusBar.reset();
+        this.logger.appendLine('Done checking settings.');
+        this.logger.appendLine(`External sync directory: ${csSettings.externalPath}`);
     }
 
     async setExternalSyncPath() {
@@ -119,6 +130,7 @@ export class CodeSync {
             return;
         }
         if (!fs.existsSync(extPath)) {
+            this.logger.appendLine(`Creating external sync path: ${extPath}`);
             helpers.getDir(extPath);
         }
         let csSettings: settings.Settings = this.Settings.Settings;
@@ -126,6 +138,7 @@ export class CodeSync {
         this.codeSyncDir = extPath;
         this.Settings.Settings = csSettings;
         this.Settings.save();
+        this.logger.appendLine(`External sync path is now ${this.Settings.Settings.externalPath}.`);
     }
 
     startFileWatcher = () => {
@@ -166,16 +179,20 @@ export class CodeSync {
 
     importSettings(): void {
         if (this.Settings.Settings.importSettings) {
+            this.logger.appendLine('Importing settings');
             this.startSync('Importing settings');
-            if (!fs.existsSync(path.join(this.codeSyncDir, SETTINGS))) {
+            let settingsPath: string = path.join(this.codeSyncDir, SETTINGS);
+            if (!fs.existsSync(settingsPath)) {
+                this.logger.appendLine(`Failed to import settings. Could not find settings.json at ${settingsPath}. Giving up.`);
+                this.statusBar.reset();
                 return;
             }
-            let settingsPath: string = path.join(this.codeSyncDir, SETTINGS);
             if (helpers.isFileEmpty(settingsPath) == false &&
             helpers.isFileContentEmpty(settingsPath) == false) {
                 this.localSettingsManager.import(settingsPath, helpers.getUserSettingsFilePath());
             }
             this.statusBar.reset();
+            this.logger.appendLine('Finished importing settings.');
         }
     }
 
@@ -192,16 +209,20 @@ export class CodeSync {
 
     async importKeybindings() {
         if (this.Settings.Settings.importKeybindings) {
+            this.logger.appendLine('Importing keybindings');
             this.startSync('Importing keybindings');
-            if (!fs.existsSync(path.join(this.codeSyncDir, KEYBINDINGS))) {
+            let keybindingsPath: string = path.join(this.codeSyncDir, KEYBINDINGS);
+            if (!fs.existsSync(keybindingsPath)) {
+                this.logger.appendLine(`Failed to import keybindings. Could not find keybindings.json at ${keybindingsPath}. Giving up.`);
+                this.statusBar.reset();
                 return;
             }
-            let keybindingsPath: string = path.join(this.codeSyncDir, KEYBINDINGS);
             if (helpers.isFileEmpty(keybindingsPath) == false &&
             helpers.isFileContentEmpty(keybindingsPath) == false) {
                 await helpers.copy(keybindingsPath, helpers.getKeybindingsFilePath());
             }
             this.statusBar.reset();
+            this.logger.appendLine('Finished importing keybindings.');
         }
     }
 
@@ -218,9 +239,12 @@ export class CodeSync {
 
     importSnippets() {
         if (this.Settings.Settings.importSnippets) {
+            this.logger.appendLine('Importing snippets');
             this.startSync('Importing snippets');
             let snippetsDirectory = path.join(this.codeSyncDir, SNIPPETS);
             if (!fs.existsSync(snippetsDirectory)) {
+                this.logger.appendLine(`Failed to import snippets. Could not find snippets directory at ${snippetsDirectory}. Giving up.`);
+                this.statusBar.reset();
                 return;
             }
             let snippetFiles: string[] = fs.readdirSync(snippetsDirectory);
@@ -233,6 +257,7 @@ export class CodeSync {
                 }
             });
             this.statusBar.reset();
+            this.logger.appendLine('Finished importing snippets.');
         }
     }
 
@@ -249,6 +274,7 @@ export class CodeSync {
 
     importExtensions() {
         if (this.Settings.Settings.importExtensions) {
+            this.logger.appendLine('Importing extensions');
             this.startSync('Importing extensions');
             let excluded: string[] = this.Settings.ExcludedExternalPackages;
             let extensions: string[] = this.Settings.Extensions;
@@ -266,6 +292,7 @@ export class CodeSync {
             else {
                 this.statusBar.reset();
             }
+            this.logger.appendLine('Finished importing extensions.');
         }
     }
 
@@ -480,16 +507,19 @@ export class CodeSync {
                     if (splitVersion.length > 0) {
                         let major = parseInt(splitVersion[0]);
                         if (!isNaN(major) && major < 2) {
+                            this.logger.appendLine(`Found version less than 2. Removing: ${tmpExtension.version}.`);
                             this.emptySyncDir(path.join(this.vsCodeExtensionDir, f, SETTINGS));
                             rimraf.sync(path.join(this.vsCodeExtensionDir, f));
                         }
                     }
                     else {
+                        this.logger.appendLine(`Could not split version. Removing: ${tmpExtension.version}.`);
                         this.emptySyncDir(path.join(this.vsCodeExtensionDir, f, SETTINGS));
                         rimraf.sync(path.join(this.vsCodeExtensionDir, f));
                     }
                 }
                 else {
+                    this.logger.appendLine(`Could not determine version. Removing ${path.join(this.vsCodeExtensionDir, f)}.`);
                     this.emptySyncDir(path.join(this.vsCodeExtensionDir, f, SETTINGS));
                     rimraf.sync(path.join(this.vsCodeExtensionDir, f));
                 }
@@ -504,7 +534,11 @@ export class CodeSync {
             if (tmpExtension.id == 'golf1052.code-sync') {
                 if (tmpExtension.id == 'golf1052.code-sync' && helpers.isVersionGreaterThan(currentVersion, tmpExtension.version) == 1) {
                     if (fs.existsSync(path.join(this.vsCodeExtensionDir, f, SETTINGS))) {
-                        await helpers.copy(path.join(this.vsCodeExtensionDir, f, SETTINGS), path.join(codeSyncExtensionDir, SETTINGS));
+                        this.logger.appendLine(`Migrating settings. Previous version: ${tmpExtension.version}. Current version: ${currentVersion}.`);
+                        let oldSettings = path.join(this.vsCodeExtensionDir, f, SETTINGS);
+                        let newSettings = path.join(codeSyncExtensionDir, SETTINGS);
+                        this.logger.appendLine(`Previous file: ${oldSettings}. New file: ${newSettings}.`)
+                        await helpers.copy(oldSettings, newSettings);
                     }
                 }
             }

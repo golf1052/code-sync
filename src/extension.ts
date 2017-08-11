@@ -2,10 +2,13 @@
 import * as vscode from 'vscode';
 import * as cs from './cs';
 import * as helpers from './helpers';
+import {Logger} from './logger';
 
+var logger: Logger;
 var codeSync: cs.CodeSync;
 
 export async function activate(context: vscode.ExtensionContext) {
+    logger = new Logger('extension');
     codeSync = new cs.CodeSync(cs.vsCodeExtensionDir, cs.codeSyncExtensionDir, '');
     codeSync.CanManageExtensions = helpers.isCodeOnPath();
     if (!codeSync.CanManageExtensions) {

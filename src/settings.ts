@@ -4,6 +4,7 @@ import * as path from 'path';
 import * as helpers from './helpers';
 import * as fs from 'fs';
 import * as cs from './cs';
+import {Logger} from './logger';
 
 export interface Settings {
     $schema: string;
@@ -27,6 +28,7 @@ interface ExternalExtensions {
 }
 
 export class CodeSyncSettings {
+    private logger: Logger;
     private settings: Settings;
     private externalExtensions: ExternalExtensions;
     // points to the settings.json file in the extension dir
@@ -35,6 +37,8 @@ export class CodeSyncSettings {
     private externalExtensionsPath: string;
 
     constructor(internalPath: string, externalExtensionsPath: string) {
+        this.logger = new Logger('settings');
+        this.logger.appendLine(`Creating settings with internal settings.json path and external extensions.json path: ${internalPath}, ${externalExtensionsPath}.`);
         this.externalExtensions = {extensions: []};
         this.internalPath = internalPath;
         this.externalExtensionsPath = externalExtensionsPath;

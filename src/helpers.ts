@@ -8,6 +8,9 @@ import * as cs from './cs';
 var recursive_copy = require('recursive-copy');
 var mkdirp = require('mkdirp');
 import * as json from 'comment-json';
+import {Logger} from './logger';
+
+let logger: Logger = new Logger('helpers');
 
 export interface FolderExtension {
     id: string;
@@ -77,31 +80,59 @@ export function getDir(path: string): string {
 // returns false if the extension was already installed
 // returns true otherwise...
 export function installExtension(name: string): boolean {
+    logger.appendLine(`Installing extension: ${name}...`);
     let options: child_process.ExecSyncOptions = {};
     options.encoding = 'utf8';
     let command: string = getCodeCommand() + ' --install-extension ';
     command += name;
-    let out = child_process.execSync(command, options);
+    let out: Buffer = new Buffer('');
+    try {
+        out = child_process.execSync(command, options);
+    }
+    catch (e) {
+        const err: Error = e;
+        logger.appendLine('Error while executing installExtension()');
+        logger.appendLine(`Command: ${command}`);
+        logError(err);
+        logger.appendLine('Failing extension installation.');
+    }
+
     if (out.indexOf('is already installed') != -1) {
+        logger.appendLine('Extension was already installed.');
         return false;
     }
     else {
+        logger.appendLine('Extension installation succeeded.');
         return true;
     }
 }
 
 export function isCodeOnPath(): boolean {
     let version: string = '';
+    let command = getCodeCommand() + ' --version';
     try {
-        version = child_process.execSync(getCodeCommand() + ' --version', {encoding: 'utf8'});
+        version = child_process.execSync(command, {encoding: 'utf8'});
     }
     catch (e) {
+        const err: Error = e;
+        logger.appendLine(`Error while executing isCodeOnPath()`);
+        logger.appendLine(`Command: ${command}`);
+        logError(err);
+        logger.appendLine(`Defaulting to false`);
         return false;
     }
+    logger.appendLine(`Found code version: ${version}.`);
     if (version != '') {
         return true;
     }
     return false;
+}
+
+export function logError(err: Error): void {
+    logger.appendLine(`Exception:`);
+    logger.appendLine(`\tName: ${err.name}`);
+    logger.appendLine(`\tMessage: ${err.message}`);
+    logger.appendLine(`\tStacktrace: ${err.stack}`);
 }
 
 function getCodeCommand(): string {
