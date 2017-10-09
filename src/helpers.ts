@@ -21,6 +21,11 @@ let windows: boolean = process.platform == 'win32';
 let osx: boolean = process.platform == 'darwin';
 let linux: boolean = process.platform == 'linux';
 
+export function isInsiders(): boolean {
+    // I have no idea if this works for non english :|
+    return vscode.env.appName.toLowerCase().includes("insider");
+}
+
 export function getInstalledExtensions(): vscode.Extension<any>[] {
     return vscode.extensions.all.filter(e => {
         return e.extensionPath.startsWith(os.homedir());
@@ -34,19 +39,27 @@ export function getExtensionDir(): string {
         return p.dir;
     }
     else {
-        return path.join(os.homedir(), '.vscode/extensions');
+        let extensionsPath: string = '.vscode/extensions';
+        if (isInsiders()) {
+            extensionsPath = '.vscode-insiders/extensions';
+        }
+        return path.join(os.homedir(), extensionsPath);
     }
 }
 
 function getCodeSettingsFolderPath(): string {
+    let codeString = 'Code';
+    if (isInsiders()) {
+        codeString = 'Code - Insiders'
+    }
     if (windows) {
-        return path.join(process.env.APPDATA, 'Code/User/');
+        return path.join(process.env.APPDATA, `${codeString}/User/`);
     }
     else if (osx) {
-        return path.join(os.homedir(), 'Library/Application Support/Code/User/');
+        return path.join(os.homedir(), `Library/Application Support/${codeString}/User/`);
     }
     else if (linux) {
-        return path.join(os.homedir(), '.config/Code/User/');
+        return path.join(os.homedir(), `.config/${codeString}/User/`);
     }
     else {
         return '';
@@ -136,11 +149,16 @@ export function logError(err: Error): void {
 }
 
 function getCodeCommand(): string {
+    let codeString: string = 'code';
+    if (isInsiders()) {
+        codeString = 'code-insiders';
+    }
+
     if (windows) {
-        return 'code.cmd';
+        return `${codeString}.cmd`;
     }
     else {
-        return 'code';
+        return codeString;
     }
 }
 
