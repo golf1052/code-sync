@@ -294,11 +294,14 @@ export class CodeSync {
             this.startSync('Importing extensions');
             let excluded: string[] = this.Settings.ExcludedExternalPackages;
             let extensions: string[] = this.Settings.Extensions;
+            let installedExtensions = helpers.getInstalledExtensions();
             let installedAny: boolean = false;
             extensions.forEach(e => {
-                let val = helpers.installExtension(e);
-                if (val) {
-                    installedAny = true;
+                if (installedExtensions.filter(i => i.id == e).length == 0) {
+                    let val = helpers.installExtension(e);
+                    if (val) {
+                        installedAny = true;
+                    }
                 }
             });
             if (installedAny) {
