@@ -24,6 +24,9 @@ export async function activate(context: vscode.ExtensionContext) {
             await codeSync.importSnippets();
             if (codeSync.CanManageExtensions) {
                 codeSync.importExtensions();
+                if (codeSync.Settings.Settings.autoExport) {
+                    codeSync.exportExtensions();
+                }
             }
         }
         codeSync.setStatusBarIcon();

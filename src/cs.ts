@@ -317,6 +317,7 @@ export class CodeSync {
 
     exportExtensions() {
         if (this.Settings.Settings.importExtensions) {
+            this.logger.appendLine('Exporting extensions');
             this.startSync('Exporting extensions');
             let excluded: string[] = this.Settings.ExcludedInstalledPackages;
             let extensions: string[] = [];
@@ -329,6 +330,7 @@ export class CodeSync {
             this.Settings.Extensions = extensions;
             this.Settings.saveExtensions();
             this.statusBar.reset();
+            this.logger.appendLine('Finished exporting extensions');
         }
     }
 
