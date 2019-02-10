@@ -48,6 +48,11 @@ With 2.3.0 CodeSync brings support for local settings. Need a specific setting t
 - Toggle status bar icon: Toggle the CodeSync status bar icon.
 
 ## Uninstalling Extensions
+
+### For 1.31 and above
+If you're on VSCode 1.31 or above this is now fixed due to the [extension list update on add, remove, enable, or disable of extensions](https://code.visualstudio.com/updates/v1_31#_extensions-change-event).
+
+### For 1.30 and below
 Currently there is no way for CodeSync to know when you have uninstalled an extension. When you uninstall an extension in VSCode it still registers the extension as installed until VSCode is restarted. Because of this when you exit VSCode, CodeSync will export the incorrect list of extensions. When you launch VSCode again CodeSync will reinstall the extension you installed. [There is an open issue in the VSCode repo about this](https://github.com/Microsoft/vscode/issues/14444). In the meantime here's a workaround:
 
 1. Exclude the extension you want to uninstall with the command: **CodeSync: Exclude an installed extension**
