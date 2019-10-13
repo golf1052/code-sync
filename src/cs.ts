@@ -214,12 +214,17 @@ export class CodeSync {
 
     exportSettings(): void {
         if (this.Settings.Settings.importSettings) {
+            this.logger.appendLine('Exporting settings.');
             this.startSync('Exporting settings');
-            if (!fs.existsSync(helpers.getUserSettingsFilePath())) {
+            let settingsPath: string = helpers.getUserSettingsFilePath();
+            if (!fs.existsSync(settingsPath)) {
+                this.logger.appendLine(`Could not find settings path at ${settingsPath}. Giving up.`);
+                this.statusBar.reset();
                 return;
             }
             this.localSettingsManager.export(helpers.getUserSettingsFilePath(), path.join(this.codeSyncDir, SETTINGS));
             this.statusBar.reset();
+            this.logger.appendLine('Finished exporting settings.');
         }
     }
 
@@ -555,15 +560,24 @@ export class CodeSync {
             let tmpExtension = helpers.getFolderExtensionInfo(f);
             if (tmpExtension.id == 'golf1052.code-sync') {
                 if (tmpExtension.id == 'golf1052.code-sync' && helpers.isVersionGreaterThan(currentVersion, tmpExtension.version) == 1) {
-                    this.logger.appendLine(`Migrating stuff. Previous version: ${tmpExtension.version}. Current version: ${currentVersion}.`);
-                    if (fs.existsSync(path.join(this.vsCodeExtensionDir, f, SETTINGS))) {
+                    // When the extension is updated we migrate settings to the new extension folder before trying to create settings.
+                    // So if the settings files already exist we've migrated them already and we don't need to migrate them again.
+                    // We don't migrate them again so we don't overwrite any new changes in the new settings files.
+                    let settingsExists: boolean = fs.existsSync(path.join(codeSyncExtensionDir, SETTINGS));
+                    let localSettingsExists: boolean = fs.existsSync(path.join(codeSyncExtensionDir, LOCAL_SETTINGS));
+                    if (!settingsExists || !localSettingsExists) {
+                        this.logger.appendLine(`Migrating stuff. Previous version: ${tmpExtension.version}. Current version: ${currentVersion}.`);
+                    } else {
+                        this.logger.appendLine(`All settings files already exist. Not migrating. Previous version: ${tmpExtension.version}. Current version: ${currentVersion}.`);
+                    }
+                    if (fs.existsSync(path.join(this.vsCodeExtensionDir, f, SETTINGS)) && !settingsExists) {
                         this.logger.appendLine(`Migrating settings.`);
                         let oldSettings = path.join(this.vsCodeExtensionDir, f, SETTINGS);
                         let newSettings = path.join(codeSyncExtensionDir, SETTINGS);
                         this.logger.appendLine(`Previous file: ${oldSettings}. New file: ${newSettings}.`)
                         await helpers.copy(oldSettings, newSettings);
                     }
-                    if (fs.existsSync(path.join(this.vsCodeExtensionDir, f, LOCAL_SETTINGS))) {
+                    if (fs.existsSync(path.join(this.vsCodeExtensionDir, f, LOCAL_SETTINGS)) && !localSettingsExists) {
                         this.logger.appendLine(`Migrating local settings.`);
                         let oldLocalSettings = path.join(this.vsCodeExtensionDir, f, LOCAL_SETTINGS);
                         let newLocalSettings = path.join(codeSyncExtensionDir, LOCAL_SETTINGS);
