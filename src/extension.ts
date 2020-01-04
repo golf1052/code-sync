@@ -10,6 +10,7 @@ var codeSync: cs.CodeSync;
 export async function activate(context: vscode.ExtensionContext) {
     logger = new Logger('extension');
     codeSync = new cs.CodeSync(cs.vsCodeExtensionDir, cs.codeSyncExtensionDir, '');
+    helpers.isCodeASnapPackage(true);
     codeSync.CanManageExtensions = helpers.isCodeOnPath();
     if (!codeSync.CanManageExtensions) {
         await vscode.window.showWarningMessage(helpers.getCodePathWarningMessage());

@@ -4,6 +4,7 @@ import * as os from 'os';
 import * as path from 'path';
 import * as fs from 'fs';
 import * as child_process from 'child_process';
+import * as process from 'process';
 import * as cs from './cs';
 var recursive_copy = require('recursive-copy');
 var mkdirp = require('mkdirp');
@@ -148,16 +149,58 @@ export function logError(err: Error): void {
     logger.appendLine(`\tStacktrace: ${err.stack}`);
 }
 
-function getCodeCommand(): string {
+function getCodeString(): string {
     let codeString: string = 'code';
     if (isInsiders()) {
         codeString = 'code-insiders';
     }
+    return codeString;
+}
+
+interface SnapPackageResult {
+    value: boolean,
+    path: string
+}
+
+export function isCodeASnapPackage(log: boolean = false): SnapPackageResult {
+    let codeString = getCodeString();
+
+    if (linux) {
+        const env = process.env;
+        if ('SNAP' in env) {
+            // VSCode has been installed through Snap so we need to invoke the code binary directly
+            let codePath = path.join(env['SNAP'], 'usr/share/code/bin', codeString);
+            if (log) {
+                logger.appendLine(`Code appears to be running through Snap. Using following as Code path: ${codePath}`);
+            }
+            return {
+                value: true,
+                path: codePath
+            };
+        }
+    } else {
+        return {
+            value: false,
+            path: null
+        };
+    }
+}
+
+function getCodeCommand(): string {
+    let codeString = getCodeString();
 
     if (windows) {
         return `${codeString}.cmd`;
-    }
-    else {
+    } else if (osx) {
+        return codeString;
+    } else if (linux) {
+        let result = isCodeASnapPackage();
+        if (result.value) {
+            return result.path;
+        } else {
+            return codeString;
+        }
+    } else {
         return codeString;
     }
 }
