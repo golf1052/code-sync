@@ -2,7 +2,7 @@
   "name": "code-sync",
   "displayName": "CodeSync",
   "description": "Sync VSCode extensions using your favorite file synchronization service (OneDrive, Dropbox, Google Drive, etc.)",
-  "version": "2.6.2",
+  "version": "2.7.0",
   "publisher": "golf1052",
   "keywords": [
     "sync",
@@ -157,6 +157,16 @@
         "category": "CodeSync",
         "command": "codeSync.toggleStatusBar",
         "title": "Toggle status bar icon"
+      },
+      {
+        "category": "CodeSync",
+        "command": "codeSync.setCodeExecutableName",
+        "title": "Set VSCode executable name"
+      },
+      {
+        "category": "CodeSync",
+        "command": "codeSync.setCodeSettingsPath",
+        "title": "Set VSCode settings path"
       }
     ]
   },

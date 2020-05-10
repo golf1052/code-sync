@@ -17,6 +17,8 @@ export interface Settings {
     importExtensions: boolean;
     showStatusBarIcon: boolean;
     excluded: ExcludedPackages;
+    executableName: string;
+    settingsPath: string;
 }
 
 interface ExcludedPackages {

@@ -18,7 +18,7 @@ export const KEYBINDINGS = 'keybindings.json';
 export const SNIPPETS = 'snippets';
 export const LOCAL_SETTINGS = 'local-settings.json';
 
-export const currentVersion: string = '2.6.2';
+export const currentVersion: string = '2.7.0';
 export let vsCodeExtensionDir: string = helpers.getExtensionDir();
 export let codeSyncExtensionDir: string = path.join(vsCodeExtensionDir, 'golf1052.code-sync-' + currentVersion);
 
@@ -110,7 +110,9 @@ export class CodeSync {
                 excluded: {
                     installed: [],
                     external: []
-                }
+                },
+                executableName: '',
+                settingsPath: ''
             };
             this.Settings.Settings = tmpSettings;
             this.Settings.save();
@@ -159,14 +161,14 @@ export class CodeSync {
 
     startFileWatcher = () => {
         let files: any = {};
-        if (fs.existsSync(helpers.getUserSettingsFilePath())) {
-            files[helpers.getUserSettingsFilePath()] = this.exportSettings.bind(this);
+        if (fs.existsSync(helpers.getUserSettingsFilePath(this.Settings.Settings))) {
+            files[helpers.getUserSettingsFilePath(this.Settings.Settings)] = this.exportSettings.bind(this);
         }
-        if (fs.existsSync(helpers.getKeybindingsFilePath())) {
-            files[helpers.getKeybindingsFilePath()] = this.exportKeybindings.bind(this);
+        if (fs.existsSync(helpers.getKeybindingsFilePath(this.Settings.Settings))) {
+            files[helpers.getKeybindingsFilePath(this.Settings.Settings)] = this.exportKeybindings.bind(this);
         }
-        if (fs.existsSync(helpers.getSnippetsFolderPath())) {
-            files[helpers.getSnippetsFolderPath()] = this.exportSnippets.bind(this);
+        if (fs.existsSync(helpers.getSnippetsFolderPath(this.Settings.Settings))) {
+            files[helpers.getSnippetsFolderPath(this.Settings.Settings)] = this.exportSnippets.bind(this);
         }
         this.fileWatcher = new FileWatcher(files, this.Settings);
     }
@@ -204,8 +206,10 @@ export class CodeSync {
                 return;
             }
             if (helpers.isFileEmpty(settingsPath) == false &&
-            helpers.isFileContentEmpty(settingsPath) == false) {
-                this.localSettingsManager.import(settingsPath, helpers.getUserSettingsFilePath());
+                helpers.isFileContentEmpty(settingsPath) == false) {
+                const userSettingsFilePath = helpers.getUserSettingsFilePath(this.Settings.Settings);
+                this.logger.appendLine(`Importing settings to ${userSettingsFilePath}`);
+                this.localSettingsManager.import(settingsPath, userSettingsFilePath);
             }
             this.statusBar.reset();
             this.logger.appendLine('Finished importing settings.');
@@ -216,13 +220,13 @@ export class CodeSync {
         if (this.Settings.Settings.importSettings) {
             this.logger.appendLine('Exporting settings.');
             this.startSync('Exporting settings');
-            let settingsPath: string = helpers.getUserSettingsFilePath();
+            let settingsPath: string = helpers.getUserSettingsFilePath(this.Settings.Settings);
             if (!fs.existsSync(settingsPath)) {
                 this.logger.appendLine(`Could not find settings path at ${settingsPath}. Giving up.`);
                 this.statusBar.reset();
                 return;
             }
-            this.localSettingsManager.export(helpers.getUserSettingsFilePath(), path.join(this.codeSyncDir, SETTINGS));
+            this.localSettingsManager.export(settingsPath, path.join(this.codeSyncDir, SETTINGS));
             this.statusBar.reset();
             this.logger.appendLine('Finished exporting settings.');
         }
@@ -239,8 +243,10 @@ export class CodeSync {
                 return;
             }
             if (helpers.isFileEmpty(keybindingsPath) == false &&
-            helpers.isFileContentEmpty(keybindingsPath) == false) {
-                await helpers.copy(keybindingsPath, helpers.getKeybindingsFilePath());
+                helpers.isFileContentEmpty(keybindingsPath) == false) {
+                const keybindingsFilePath = helpers.getKeybindingsFilePath(this.Settings.Settings)
+                this.logger.appendLine(`Importing keybindings to ${keybindingsFilePath}`);
+                await helpers.copy(keybindingsPath, keybindingsFilePath);
             }
             this.statusBar.reset();
             this.logger.appendLine('Finished importing keybindings.');
@@ -250,10 +256,13 @@ export class CodeSync {
     async exportKeybindings() {
         if (this.Settings.Settings.importKeybindings) {
             this.startSync('Exporting keybindings');
-            if (!fs.existsSync(helpers.getKeybindingsFilePath())) {
+            let keybindingsPath = helpers.getKeybindingsFilePath(this.Settings.Settings);
+            if (!fs.existsSync(keybindingsPath)) {
+                this.logger.appendLine(`Could not find keybindings path at ${keybindingsPath}. Giving up.`);
+                this.statusBar.reset();
                 return;
             }
-            await helpers.copy(helpers.getKeybindingsFilePath(), path.join(this.codeSyncDir, KEYBINDINGS));
+            await helpers.copy(keybindingsPath, path.join(this.codeSyncDir, KEYBINDINGS));
             this.statusBar.reset();
         }   
     }
@@ -273,7 +282,7 @@ export class CodeSync {
                 let s = snippetFiles[i];if (fs.lstatSync(path.join(snippetsDirectory, s)).isFile()) {
                     if (helpers.isFileEmpty(path.join(snippetsDirectory, s)) == false &&
                     helpers.isFileContentEmpty(path.join(snippetsDirectory, s)) == false) {
-                        await helpers.copy(path.join(snippetsDirectory, s), path.join(helpers.getSnippetsFolderPath(), s));
+                        await helpers.copy(path.join(snippetsDirectory, s), path.join(helpers.getSnippetsFolderPath(this.Settings.Settings), s));
                     }
                 }
             }
@@ -285,10 +294,13 @@ export class CodeSync {
     async exportSnippets() {
         if (this.Settings.Settings.importSnippets) {
             this.startSync('Exporting snippets');
-            if (!fs.existsSync(helpers.getSnippetsFolderPath())) {
+            const snippetsFolderPath = helpers.getSnippetsFolderPath(this.Settings.Settings);
+            if (!fs.existsSync(snippetsFolderPath)) {
+                this.logger.appendLine(`Could not find snippets path at ${snippetsFolderPath}. Giving up.`);
+                this.statusBar.reset();
                 return;
             }
-            await helpers.copy(helpers.getSnippetsFolderPath(), path.join(this.codeSyncDir, SNIPPETS));
+            await helpers.copy(snippetsFolderPath, path.join(this.codeSyncDir, SNIPPETS));
             this.statusBar.reset();
         }
     }
@@ -303,7 +315,7 @@ export class CodeSync {
             let installedAny: boolean = false;
             extensions.forEach(e => {
                 if (installedExtensions.filter(i => i.id == e).length == 0) {
-                    let val = helpers.installExtension(e);
+                    let val = helpers.installExtension(e, this.Settings.Settings);
                     if (val) {
                         installedAny = true;
                     }
@@ -515,6 +527,68 @@ export class CodeSync {
             }
             this.Settings.Settings = settings;
             this.Settings.save();
+        }
+    }
+
+    async setCodeExecutableName(): Promise<void> {
+        let executableName: string = '';
+        executableName = await vscode.window.showInputBox({
+            prompt: 'Enter the VSCode executable name. NOTE: Do not include the file extension (.exe, .sh, etc.)',
+            placeHolder: 'code'
+        });
+
+        if (executableName == undefined) {
+            return;
+        } else {
+            vscode.window.showInformationMessage('Testing user defined VSCode executable name...');
+            let oldExecutableName;
+            if (this.Settings.Settings.executableName) {
+                oldExecutableName = this.Settings.Settings.executableName;
+            } else {
+                oldExecutableName = '';
+            }
+            let csSettings = this.Settings.Settings;
+            csSettings.executableName = executableName;
+            this.Settings.Settings = csSettings;
+            this.Settings.save();
+
+            if (helpers.isCodeOnPath(this.Settings.Settings)) {
+                vscode.window.showInformationMessage(`Test succeeded. Will now use ${executableName} as VSCode executable name.`);
+            } else {
+                csSettings.executableName = oldExecutableName;
+                this.Settings.Settings = csSettings;
+                this.Settings.save();
+                vscode.window.showInformationMessage('Test failed. Reverting back to old VSCode executable name.');
+            }
+        }
+    }
+
+    async setCodeSettingsPath(): Promise<void> {
+        let settingsPath: string = '';
+        settingsPath = await vscode.window.showInputBox({
+            prompt: 'Enter the VSCode user settings path. This must be an absolute path.',
+            placeHolder: helpers.getDefaultCodeSettingsFolderPath()
+        });
+
+        if (settingsPath == undefined) {
+            return;
+        } else {
+            vscode.window.showInformationMessage('Testing user defined VSCode user settings path...');
+            const oldSettingsPath = this.Settings.Settings.settingsPath;
+            this.Settings.Settings.settingsPath = settingsPath;
+            this.Settings.save();
+
+            if (!settingsPath) {
+                settingsPath = helpers.getDefaultCodeSettingsFolderPath();
+            }
+
+            if (fs.existsSync(settingsPath)) {
+                vscode.window.showInformationMessage(`Test succeeded. Will now use ${settingsPath} as VSCode user settings path.`);
+            } else {
+                this.Settings.Settings.settingsPath = oldSettingsPath;
+                this.Settings.save();
+                vscode.window.showInformationMessage('Test failed. Reverting back to old VSCode user settings path.');
+            }
         }
     }
 

@@ -6,6 +6,7 @@ import * as fs from 'fs';
 import * as child_process from 'child_process';
 import * as process from 'process';
 import * as cs from './cs';
+import * as settings from './settings';
 var recursive_copy = require('recursive-copy');
 var mkdirp = require('mkdirp');
 import * as json from 'comment-json';
@@ -48,7 +49,15 @@ export function getExtensionDir(): string {
     }
 }
 
-function getCodeSettingsFolderPath(): string {
+function getCodeSettingsFolderPath(settings: settings.Settings): string {
+    if (settings.settingsPath) {
+        logger.appendLine(`Using user defined settings path: ${settings.settingsPath}`);
+        return settings.settingsPath;
+    }
+    return getDefaultCodeSettingsFolderPath();
+}
+
+export function getDefaultCodeSettingsFolderPath(): string {
     let codeString = 'Code';
     if (isInsiders()) {
         codeString = 'Code - Insiders'
@@ -63,20 +72,21 @@ function getCodeSettingsFolderPath(): string {
         return path.join(os.homedir(), `.config/${codeString}/User/`);
     }
     else {
+        logger.appendLine('Unknown OS type, retur');
         return '';
     }
 }
 
-export function getUserSettingsFilePath(): string {
-    return path.join(getCodeSettingsFolderPath(), cs.SETTINGS);
+export function getUserSettingsFilePath(settings: settings.Settings): string {
+    return path.join(getCodeSettingsFolderPath(settings), cs.SETTINGS);
 }
 
-export function getKeybindingsFilePath(): string {
-    return path.join(getCodeSettingsFolderPath(), cs.KEYBINDINGS);
+export function getKeybindingsFilePath(settings: settings.Settings): string {
+    return path.join(getCodeSettingsFolderPath(settings), cs.KEYBINDINGS);
 }
 
-export function getSnippetsFolderPath(): string {
-    return path.join(getCodeSettingsFolderPath(), cs.SNIPPETS + '/');
+export function getSnippetsFolderPath(settings: settings.Settings): string {
+    return path.join(getCodeSettingsFolderPath(settings), cs.SNIPPETS + '/');
 }
 
 export async function copy(src: string, dest: string) {
@@ -93,11 +103,11 @@ export function getDir(path: string): string {
 
 // returns false if the extension was already installed
 // returns true otherwise...
-export function installExtension(name: string): boolean {
+export function installExtension(name: string, settings: settings.Settings): boolean {
     logger.appendLine(`Installing extension: ${name}...`);
     let options: child_process.ExecSyncOptions = {};
     options.encoding = 'utf8';
-    let command: string = getCodeCommand() + ' --install-extension ';
+    let command: string = getCodeCommand(settings) + ' --install-extension ';
     command += name;
     let out: Buffer = new Buffer('');
     try {
@@ -121,9 +131,9 @@ export function installExtension(name: string): boolean {
     }
 }
 
-export function isCodeOnPath(): boolean {
+export function isCodeOnPath(settings: settings.Settings): boolean {
     let version: string = '';
-    let command = getCodeCommand() + ' --version';
+    let command = getCodeCommand(settings) + ' --version';
     try {
         version = child_process.execSync(command, {encoding: 'utf8'});
     }
@@ -149,7 +159,11 @@ export function logError(err: Error): void {
     logger.appendLine(`\tStacktrace: ${err.stack}`);
 }
 
-function getCodeString(): string {
+function getCodeString(settings: settings.Settings): string {
+    if (settings.executableName) {
+        logger.appendLine(`Using user defined executable name: ${settings.executableName}`);
+        return settings.executableName;
+    }
     let codeString: string = 'code';
     if (isInsiders()) {
         codeString = 'code-insiders';
@@ -162,8 +176,8 @@ interface SnapPackageResult {
     path: string
 }
 
-export function isCodeASnapPackage(log: boolean = false): SnapPackageResult {
-    let codeString = getCodeString();
+export function isCodeASnapPackage(settings: settings.Settings, log: boolean = false): SnapPackageResult {
+    let codeString = getCodeString(settings);
 
     if (linux) {
         const env = process.env;
@@ -186,15 +200,15 @@ export function isCodeASnapPackage(log: boolean = false): SnapPackageResult {
     }
 }
 
-function getCodeCommand(): string {
-    let codeString = getCodeString();
+function getCodeCommand(settings: settings.Settings): string {
+    let codeString = getCodeString(settings);
 
     if (windows) {
         return `${codeString}.cmd`;
     } else if (osx) {
         return codeString;
     } else if (linux) {
-        let result = isCodeASnapPackage();
+        let result = isCodeASnapPackage(settings);
         if (result.value) {
             return result.path;
         } else {

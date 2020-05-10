@@ -10,8 +10,8 @@ var codeSync: cs.CodeSync;
 export async function activate(context: vscode.ExtensionContext) {
     logger = new Logger('extension');
     codeSync = new cs.CodeSync(cs.vsCodeExtensionDir, cs.codeSyncExtensionDir, '');
-    helpers.isCodeASnapPackage(true);
-    codeSync.CanManageExtensions = helpers.isCodeOnPath();
+    helpers.isCodeASnapPackage(codeSync.Settings.Settings, true);
+    codeSync.CanManageExtensions = helpers.isCodeOnPath(codeSync.Settings.Settings);
     if (!codeSync.CanManageExtensions) {
         await vscode.window.showWarningMessage(helpers.getCodePathWarningMessage());
     }
@@ -115,6 +115,12 @@ export async function activate(context: vscode.ExtensionContext) {
     let toggleStatusBarDisposable = vscode.commands.registerCommand('codeSync.toggleStatusBar', function() {
         codeSync.toggleStatusBarIcon();
     });
+    const setCodeExecutableName = vscode.commands.registerCommand('codeSync.setCodeExecutableName', async function() {
+        await codeSync.setCodeExecutableName();
+    });
+    const setCodeSettingsPath = vscode.commands.registerCommand('codeSync.setCodeSettingsPath', async function() {
+        await codeSync.setCodeSettingsPath();
+    });
 
     context.subscriptions.push(
         importAllDisposable,
@@ -140,7 +146,9 @@ export async function activate(context: vscode.ExtensionContext) {
         toggleImportSnippetsDisposable,
         toggleImportExtensionsDisposable,
         setSyncPathDisposable,
-        toggleStatusBarDisposable
+        toggleStatusBarDisposable,
+        setCodeExecutableName,
+        setCodeSettingsPath
     );
 }
 
