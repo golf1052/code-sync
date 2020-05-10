@@ -30,7 +30,11 @@ export function isInsiders(): boolean {
 
 export function getInstalledExtensions(): vscode.Extension<any>[] {
     return vscode.extensions.all.filter(e => {
-        return e.extensionPath.startsWith(os.homedir());
+        if (windows) {
+            return !e.extensionPath.includes('app\\extensions');
+        } else {
+            return !e.extensionPath.includes('app/extension');
+        }
     });
 }
 

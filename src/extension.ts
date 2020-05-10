@@ -10,6 +10,8 @@ var codeSync: cs.CodeSync;
 export async function activate(context: vscode.ExtensionContext) {
     logger = new Logger('extension');
     codeSync = new cs.CodeSync(cs.vsCodeExtensionDir, cs.codeSyncExtensionDir, '');
+    // we need to check for settings to ensure they exist because we start using them right away
+    await codeSync.checkForSettings();
     helpers.isCodeASnapPackage(codeSync.Settings.Settings, true);
     codeSync.CanManageExtensions = helpers.isCodeOnPath(codeSync.Settings.Settings);
     if (!codeSync.CanManageExtensions) {
@@ -17,7 +19,6 @@ export async function activate(context: vscode.ExtensionContext) {
     }
     codeSync.Active = true;
     if (codeSync.Active) {
-        await codeSync.checkForSettings();
         codeSync.startFileWatcher();
         if (codeSync.Settings.Settings.autoImport) {
             codeSync.importSettings();
