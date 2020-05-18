@@ -195,6 +195,11 @@ export function isCodeASnapPackage(settings: settings.Settings, log: boolean = f
                 value: true,
                 path: codePath
             };
+        } else {
+            return {
+                value: false,
+                path: null
+            }
         }
     } else {
         return {
