@@ -1,6 +1,10 @@
 # CodeSync
 A VSCode extension that syncs extensions, settings, snippets, and keybindings using your favorite file synchronization service (OneDrive, Dropbox, Google Drive, etc.)
 
+Available on
+- [Visual Studio Code extension marketplace](https://marketplace.visualstudio.com/items?itemName=golf1052.code-sync)
+- [Open VSX Registry](https://open-vsx.org/extension/golf1052/code-sync)
+
 ## Toggle Status Bar Icon
 With 2.4.0 you can now toggle the CodeSync status bar icon. After upgrading to this version if you do not see the status bar icon open the Command Palette and run **CodeSync: Toggle status bar icon** and it will appear again.
 
