@@ -7,8 +7,8 @@ import * as child_process from 'child_process';
 import * as process from 'process';
 import * as cs from './cs';
 import * as settings from './settings';
-var recursive_copy = require('recursive-copy');
-var mkdirp = require('mkdirp');
+const recursive_copy = require('recursive-copy');
+import * as mkdirp from 'mkdirp';
 import * as json from 'comment-json';
 import {Logger} from './logger';
 
