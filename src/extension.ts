@@ -15,7 +15,7 @@ export async function activate(context: vscode.ExtensionContext) {
     helpers.isCodeASnapPackage(codeSync.Settings.Settings, true);
     codeSync.CanManageExtensions = helpers.isCodeOnPath(codeSync.Settings.Settings);
     if (!codeSync.CanManageExtensions) {
-        await vscode.window.showWarningMessage(helpers.getCodePathWarningMessage());
+        vscode.window.showWarningMessage(helpers.getCodePathWarningMessage());
     }
     codeSync.Active = true;
     if (codeSync.Active) {
