@@ -32,6 +32,9 @@ async function main() {
         }
 
         for (const args of testArgs) {
+            args.extensionTestsEnv = {
+                'CODE_SYNC_TESTING': 'true'
+            };
             setArch(args);
 
             // Download VS Code, unzip it and run the integration test
