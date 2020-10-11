@@ -26,7 +26,8 @@
             ],
             "env": {
                 "IN_EDITOR": "true",
-                "CODE_SYNC_TESTING": "true"
+                "CODE_SYNC_TESTING": "true",
+                "CODE_SYNC_EXEC_PATH": "code"
             },
             "outFiles": [
                 "${workspaceFolder}/out/test/**/*.js"

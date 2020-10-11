@@ -125,8 +125,6 @@ export function installExtension(name: string, settings: settings.Settings): boo
         logger.appendLine('Failing extension installation.');
     }
 
-    console.log(out);
-
     if (out.indexOf('is already installed') != -1) {
         logger.appendLine('Extension was already installed.');
         return false;

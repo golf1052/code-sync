@@ -135,14 +135,11 @@ export class CodeSync {
     }
 
     async setExternalSyncPath() {
-        console.log('trying to set external sync path');
         let extPath: string = '';
         if (process.env.CODE_SYNC_TESTING) {
             // if we're testing don't use showInputBox because it will block testing
             extPath = path.join(path.resolve('.'), 'code-sync');
-            console.log(`CODE_SYNC_TESTING is set, setting extPath to ${extPath}`);
         } else {
-            console.log('CODE_SYNC_TESTING is not set, calling showInputBox');
             extPath = await vscode.window.showInputBox({
                 prompt: 'Enter the full path to where you want CodeSync to sync to',
                 value: path.join(os.homedir(), 'OneDrive/Apps/code-sync')
