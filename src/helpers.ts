@@ -10,6 +10,7 @@ import * as settings from './settings';
 const recursive_copy = require('recursive-copy');
 import * as mkdirp from 'mkdirp';
 import * as json from 'comment-json';
+import * as vscode_test from 'vscode-test';
 import {Logger} from './logger';
 
 let logger: Logger = new Logger('helpers');
@@ -123,6 +124,8 @@ export function installExtension(name: string, settings: settings.Settings): boo
         logError(err);
         logger.appendLine('Failing extension installation.');
     }
+
+    console.log(out);
 
     if (out.indexOf('is already installed') != -1) {
         logger.appendLine('Extension was already installed.');
@@ -242,6 +245,10 @@ export function isCodeASnapPackage(settings: settings.Settings, log: boolean = f
 }
 
 function getCodeCommand(settings: settings.Settings): string {
+    if (process.env.CODE_SYNC_TESTING) {
+        return vscode_test.resolveCliPathFromVSCodeExecutablePath(process.env.CODE_SYNC_EXEC_PATH);
+    }
+
     let codeString = getCodeString(settings);
 
     if (windows) {

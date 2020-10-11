@@ -38,6 +38,7 @@ async function main() {
 
             const vscodeExecutablePath = await vscode_test.downloadAndUnzipVSCode(args.version, args.platform);
             args.vscodeExecutablePath = vscodeExecutablePath;
+            args.extensionTestsEnv.CODE_SYNC_EXEC_PATH = vscodeExecutablePath;
             child_process.spawnSync(vscode_test.resolveCliPathFromVSCodeExecutablePath(vscodeExecutablePath), ['--install-extension', 'golf1052.base16-generator'], {
                 encoding: 'utf8',
                 stdio: 'inherit'
