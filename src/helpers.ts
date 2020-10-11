@@ -76,7 +76,7 @@ export function getDefaultCodeSettingsFolderPath(): string {
         return path.join(os.homedir(), `.config/${codeString}/User/`);
     }
     else {
-        logger.appendLine('Unknown OS type, retur');
+        logger.appendLine('Unknown OS type, return');
         return '';
     }
 }
@@ -111,9 +111,8 @@ export function installExtension(name: string, settings: settings.Settings): boo
     logger.appendLine(`Installing extension: ${name}...`);
     let options: child_process.ExecSyncOptions = {};
     options.encoding = 'utf8';
-    let command: string = getCodeCommand(settings) + ' --install-extension ';
-    command += name;
-    let out: Buffer = new Buffer('');
+    const command: string = `${getCodeCommand(settings)} --install-extension ${name}`;
+    let out: Buffer = Buffer.from('');
     try {
         out = child_process.execSync(command, options);
     }
@@ -131,6 +130,39 @@ export function installExtension(name: string, settings: settings.Settings): boo
     }
     else {
         logger.appendLine('Extension installation succeeded.');
+        return true;
+    }
+}
+
+/**
+ * Uninstalls an extension. Used for testing.
+ * @param name The extension id
+ * @param settings Settings object
+ * @returns Returns true if the extension was uninstalled, false if the extension was already uninstalled
+ */
+export function uninstallExtension(name: string, settings: settings.Settings): boolean {
+    logger.appendLine(`Uninstalling extension: ${name}...`);
+    const options: child_process.ExecSyncOptions = {};
+    options.encoding = 'utf8';
+    const command: string = `${getCodeCommand(settings)} --uninstall-extension ${name}`;
+    let out: Buffer = Buffer.from('');
+    try {
+        out = child_process.execSync(command, options);
+    }
+    catch (e) {
+        const err: Error = e;
+        logger.appendLine('Error while executing uninstallExtension()');
+        logger.appendLine(`Command: ${command}`);
+        logError(err);
+        logger.appendLine('Failing extension uninstallation.');
+    }
+
+    if (out.indexOf('is not installed') != -1) {
+        logger.appendLine('Extension was not uninstalled.');
+        return false;
+    }
+    else {
+        logger.appendLine('Extension uninstallation succeeded.');
         return true;
     }
 }
@@ -239,7 +271,7 @@ export function getFolderExtensionInfo(folderName: string): FolderExtension {
     if (folderName.lastIndexOf('-') != -1) {
         let tmpVersion: string = folderName.substring(folderName.lastIndexOf('-') + 1);
         if (!isNaN(parseInt(tmpVersion[0])) &&
-        !isNaN(parseInt(tmpVersion[tmpVersion.length - 1]))) {
+            !isNaN(parseInt(tmpVersion[tmpVersion.length - 1]))) {
             id = folderName.substring(0, folderName.lastIndexOf('-'));
             version = tmpVersion;
         }

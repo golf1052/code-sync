@@ -24,9 +24,13 @@
                 "--extensionDevelopmentPath=${workspaceRoot}",
                 "--extensionTestsPath=${workspaceRoot}/out/test/suite/index"
             ],
+            "env": {
+                "IN_EDITOR": "true"
+            },
             "outFiles": [
                 "${workspaceFolder}/out/test/**/*.js"
-            ]
+            ],
+            "preLaunchTask": "npm"
         }
     ]
 }
