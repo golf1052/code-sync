@@ -28,4 +28,5 @@ jobs:
     - run: npm ci
     - run: npm install -g typescript@3.9.7
     - run: tsc
+    - run: ls -R
     - run: npm test
