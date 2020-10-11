@@ -25,7 +25,8 @@
                 "--extensionTestsPath=${workspaceRoot}/out/test/suite/index"
             ],
             "env": {
-                "IN_EDITOR": "true"
+                "IN_EDITOR": "true",
+                "CODE_SYNC_TESTING": "true"
             },
             "outFiles": [
                 "${workspaceFolder}/out/test/**/*.js"
