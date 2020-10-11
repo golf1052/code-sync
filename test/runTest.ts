@@ -1,7 +1,6 @@
+import * as child_process from 'child_process';
 import * as path from 'path';
-import * as fs from 'fs';
-import * as json from 'comment-json';
-import { runTests } from 'vscode-test';
+import * as vscode_test from 'vscode-test';
 import { TestOptions } from 'vscode-test/out/runTest';
 
 async function main() {
@@ -37,8 +36,15 @@ async function main() {
             };
             setArch(args);
 
+            const vscodeExecutablePath = await vscode_test.downloadAndUnzipVSCode(args.version, args.platform);
+            args.vscodeExecutablePath = vscodeExecutablePath;
+            child_process.spawnSync(vscode_test.resolveCliPathFromVSCodeExecutablePath(vscodeExecutablePath), ['--install-extension', 'golf1052.base16-generator'], {
+                encoding: 'utf8',
+                stdio: 'inherit'
+            });
+
             // Download VS Code, unzip it and run the integration test
-            await runTests(args);
+            await vscode_test.runTests(args);
         }
     } catch (err) {
         console.error(err);
