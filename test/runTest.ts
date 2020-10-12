@@ -45,7 +45,10 @@ async function main() {
             });
 
             // Download VS Code, unzip it and run the integration test
-            await vscode_test.runTests(args);
+            await vscode_test.runTests(args)
+            .catch(err => {
+                throw err;
+            });
         }
     } catch (err) {
         console.error(err);
