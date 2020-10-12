@@ -8,7 +8,7 @@ import * as helpers from './helpers';
 import * as fs from 'fs';
 var rimraf = require('rimraf');
 import * as chokidar from 'chokidar';
-import {FileWatcher} from './file-watcher';
+import {FileWatcher, FileWatcherFiles} from './file-watcher';
 import {LocalSettings} from './local-settings';
 import {Logger} from './logger';
 
@@ -165,7 +165,7 @@ export class CodeSync {
     }
 
     startFileWatcher = () => {
-        let files: any = {};
+        let files: FileWatcherFiles = {};
         if (fs.existsSync(helpers.getUserSettingsFilePath(this.Settings.Settings))) {
             files[helpers.getUserSettingsFilePath(this.Settings.Settings)] = this.exportSettings.bind(this);
         }

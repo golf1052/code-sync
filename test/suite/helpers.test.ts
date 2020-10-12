@@ -3,36 +3,12 @@ import * as helpers from '../../src/helpers';
 import * as os from 'os';
 import * as path from 'path';
 import * as settings from '../../src/settings';
+import * as test_helpers from './test-helpers';
 import * as vscode from 'vscode';
-import { after } from 'mocha';
-
-function getDefaultSettings(): settings.Settings {
-    return {
-        $schema: './schema/settings.schema.json',
-        externalPath: '',
-        autoImport: true,
-        autoExport: true,
-        importSettings: true,
-        importKeybindings: true,
-        importSnippets: true,
-        importExtensions: true,
-        showStatusBarIcon: true,
-        excluded: {
-            installed: [],
-            external: []
-        },
-        executableName: '',
-        settingsPath: ''
-    };
-}
-
-function isInsiders(): boolean {
-    return vscode.env.appName.toLowerCase().includes("insider");
-}
 
 suite('helper.ts', () => {
     suite('isInsiders', function() {
-        if (isInsiders()) {
+        if (test_helpers.isInsiders()) {
             test('VSCode Insiders should be true', function() {
                 assert.ok(helpers.isInsiders());
             });
@@ -50,7 +26,7 @@ suite('helper.ts', () => {
     });
 
     suite('getExtensionDir', function() {
-        if (isInsiders()) {
+        if (test_helpers.isInsiders()) {
             const expectedExtensionsPath = path.join(os.homedir(), '.vscode-insiders/extensions');
             test(`VSCode Insiders extensions directory should be ${expectedExtensionsPath}`, function() {
                 assert.equal(helpers.getExtensionDir().toLowerCase(), expectedExtensionsPath.toLowerCase());
@@ -66,7 +42,7 @@ suite('helper.ts', () => {
     suite('getDefaultCodeSettingsFolderPath', function() {
         let expectedSettingsPath: string = '';
         let testTitle: string = '';
-        if (isInsiders()) {
+        if (test_helpers.isInsiders()) {
             if (process.platform === 'win32') {
                 expectedSettingsPath = path.join(process.env.APPDATA, 'Code - Insiders/User/');
                 testTitle = `VSCode Insiders Windows settings directory should be ${expectedSettingsPath}`;
@@ -102,7 +78,7 @@ suite('helper.ts', () => {
     suite('getUserSettingsFilePath', function() {
         let expectedSettingsPath: string = '';
         let testTitle: string = '';
-        if (isInsiders()) {
+        if (test_helpers.isInsiders()) {
             if (process.platform === 'win32') {
                 expectedSettingsPath = path.join(process.env.APPDATA, 'Code - Insiders/User/', 'settings.json');
                 testTitle = `VSCode Insiders Windows settings file should be ${expectedSettingsPath}`;
@@ -133,14 +109,14 @@ suite('helper.ts', () => {
         }
 
         test(testTitle, function() {
-            assert.equal(helpers.getUserSettingsFilePath(getDefaultSettings()), expectedSettingsPath);
+            assert.equal(helpers.getUserSettingsFilePath(test_helpers.getDefaultSettings()), expectedSettingsPath);
         });
     });
 
     suite('getKeybindingsFilePath', function() {
         let expectedSettingsPath: string = '';
         let testTitle: string = '';
-        if (isInsiders()) {
+        if (test_helpers.isInsiders()) {
             if (process.platform === 'win32') {
                 expectedSettingsPath = path.join(process.env.APPDATA, 'Code - Insiders/User/', 'keybindings.json');
                 testTitle = `VSCode Insiders Windows keybindings file should be ${expectedSettingsPath}`;
@@ -171,14 +147,14 @@ suite('helper.ts', () => {
         }
 
         test(testTitle, function() {
-            assert.equal(helpers.getKeybindingsFilePath(getDefaultSettings()), expectedSettingsPath);
+            assert.equal(helpers.getKeybindingsFilePath(test_helpers.getDefaultSettings()), expectedSettingsPath);
         });
     });
 
     suite('getSnippetsFolderPath', function() {
         let expectedSettingsPath: string = '';
         let testTitle: string = '';
-        if (isInsiders()) {
+        if (test_helpers.isInsiders()) {
             if (process.platform === 'win32') {
                 expectedSettingsPath = path.join(process.env.APPDATA, 'Code - Insiders/User/', 'snippets/');
                 testTitle = `VSCode Insiders Windows snippets directory should be ${expectedSettingsPath}`;
@@ -209,25 +185,25 @@ suite('helper.ts', () => {
         }
 
         test(testTitle, function() {
-            assert.equal(helpers.getSnippetsFolderPath(getDefaultSettings()), expectedSettingsPath);
+            assert.equal(helpers.getSnippetsFolderPath(test_helpers.getDefaultSettings()), expectedSettingsPath);
         });
     });
 
     suite('installExtension', function() {
         setup(function() {
-            helpers.uninstallExtension('golf1052.test-extension', getDefaultSettings());
+            helpers.uninstallExtension('golf1052.test-extension', test_helpers.getDefaultSettings());
         });
         test('Installing test-extension should return true', function() {
-            assert.ok(helpers.installExtension('golf1052.test-extension', getDefaultSettings()));
+            assert.ok(helpers.installExtension('golf1052.test-extension', test_helpers.getDefaultSettings()));
         });
         teardown(function() {
-            helpers.uninstallExtension('golf1052.test-extension', getDefaultSettings());
+            helpers.uninstallExtension('golf1052.test-extension', test_helpers.getDefaultSettings());
         });
     });
 
     suite('isCodeOnPath', function() {
         test('code should be on path', function() {
-            assert.ok(helpers.isCodeOnPath(getDefaultSettings()));
+            assert.ok(helpers.isCodeOnPath(test_helpers.getDefaultSettings()));
         });
     });
 
@@ -239,12 +215,12 @@ suite('helper.ts', () => {
         if (process.platform === 'linux' && process.env.SNAP) {
             expectedReturnValue.value = true;
             let codeString = 'code';
-            if (isInsiders()) {
+            if (test_helpers.isInsiders()) {
                 codeString = 'code-insiders';
             }
             expectedReturnValue.path = path.join(process.env.SNAP, 'usr/share/code/bin', codeString);
         }
-        const actualValue = helpers.isCodeASnapPackage(getDefaultSettings());
+        const actualValue = helpers.isCodeASnapPackage(test_helpers.getDefaultSettings());
         assert.equal(actualValue.value, expectedReturnValue.value);
         assert.equal(actualValue.path, expectedReturnValue.path);
     });
