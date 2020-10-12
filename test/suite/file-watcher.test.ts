@@ -83,7 +83,7 @@ suite('file-watcher.ts', function() {
         });
 
         test('Writing to file in snippets directory should increment write count by 1', function(done) {
-            this.timeout(0);
+            this.timeout(5000);
             fs.appendFileSync(snippetsFile, Buffer.from('testing'));
             setTimeout(function() {
                 // stability threshold for file is 2 seconds so wait 3 seconds to ensure change event has come through

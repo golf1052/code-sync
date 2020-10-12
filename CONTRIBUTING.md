@@ -12,7 +12,7 @@ When prepping a new version don't change the version number in [`package.json`](
 
 See [this tip](https://code.visualstudio.com/api/working-with-extensions/testing-extension#using-insiders-version-for-extension-development) about running tests on the console if VSCode is already running.
 
-Add new tests as necessary, all tests should pass before committing.
+Add new tests as necessary, leave test results at least the same or better than you found them before committing.
 
 ## Pushing Changes
 
