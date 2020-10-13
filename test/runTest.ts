@@ -4,6 +4,7 @@ import * as vscode_test from 'vscode-test';
 import { TestOptions } from 'vscode-test/out/runTest';
 
 async function main() {
+    process.exit(1);
     try {
         // The folder containing the Extension Manifest package.json
         // Passed to `--extensionDevelopmentPath`
@@ -45,10 +46,7 @@ async function main() {
             });
 
             // Download VS Code, unzip it and run the integration test
-            await vscode_test.runTests(args)
-            .catch(err => {
-                throw err;
-            });
+            await vscode_test.runTests(args);
         }
     } catch (err) {
         console.error(err);
