@@ -3,7 +3,7 @@ import * as path from 'path';
 import * as vscode_test from 'vscode-test';
 import { TestOptions } from 'vscode-test/out/runTest';
 
-async function main() {
+function main() {
     process.exit(1);
     try {
         // The folder containing the Extension Manifest package.json
@@ -37,16 +37,21 @@ async function main() {
             };
             setArch(args);
 
-            const vscodeExecutablePath = await vscode_test.downloadAndUnzipVSCode(args.version, args.platform);
-            args.vscodeExecutablePath = vscodeExecutablePath;
-            args.extensionTestsEnv.CODE_SYNC_EXEC_PATH = vscodeExecutablePath;
-            child_process.spawnSync(vscode_test.resolveCliPathFromVSCodeExecutablePath(vscodeExecutablePath), ['--install-extension', 'golf1052.base16-generator'], {
-                encoding: 'utf8',
-                stdio: 'inherit'
+            vscode_test.downloadAndUnzipVSCode(args.version, args.platform)
+            .then((vscodeExecutablePath: string) => {
+                // const vscodeExecutablePath = await vscode_test.downloadAndUnzipVSCode(args.version, args.platform);
+                args.vscodeExecutablePath = vscodeExecutablePath;
+                args.extensionTestsEnv.CODE_SYNC_EXEC_PATH = vscodeExecutablePath;
+                child_process.spawnSync(vscode_test.resolveCliPathFromVSCodeExecutablePath(vscodeExecutablePath), ['--install-extension', 'golf1052.base16-generator'], {
+                    encoding: 'utf8',
+                    stdio: 'inherit'
+                });
+                // Download VS Code, unzip it and run the integration test
+                return vscode_test.runTests(args)
+            })
+            .catch(err => {
+                throw err;
             });
-
-            // Download VS Code, unzip it and run the integration test
-            await vscode_test.runTests(args);
         }
     } catch (err) {
         console.error(err);
