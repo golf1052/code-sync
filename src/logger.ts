@@ -27,6 +27,13 @@ export class Logger {
         }
 
         output += `\t${new Date().toISOString()} - ${value}`;
-        Logger.outputChannel.appendLine(output);
+        this.log(output);
+    }
+
+    private log(line: string): void {
+        if (process.env.CODE_SYNC_TESTING) {
+            console.log(line);
+        }
+        Logger.outputChannel.appendLine(line);
     }
 }
