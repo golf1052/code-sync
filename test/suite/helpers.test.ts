@@ -191,6 +191,7 @@ suite('helper.ts', () => {
 
     suite('installExtension', function() {
         setup(function() {
+            this.timeout(5000);
             helpers.uninstallExtension('golf1052.test-extension', test_helpers.getDefaultSettings());
         });
         test('Installing test-extension should return true', function() {
@@ -198,6 +199,7 @@ suite('helper.ts', () => {
             assert.ok(helpers.installExtension('golf1052.test-extension', test_helpers.getDefaultSettings()));
         });
         teardown(function() {
+            this.timeout(5000);
             helpers.uninstallExtension('golf1052.test-extension', test_helpers.getDefaultSettings());
         });
     });
