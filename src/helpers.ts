@@ -243,26 +243,24 @@ export function isCodeASnapPackage(settings: settings.Settings, log: boolean = f
 }
 
 function getCodeCommand(settings: settings.Settings): string {
+    let codeString: string;
     if (process.env.CODE_SYNC_TESTING) {
-        return vscode_test.resolveCliPathFromVSCodeExecutablePath(process.env.CODE_SYNC_EXEC_PATH);
-    }
-
-    let codeString = getCodeString(settings);
-
-    if (windows) {
-        return `${codeString}.cmd`;
-    } else if (osx) {
-        return codeString;
-    } else if (linux) {
-        let result = isCodeASnapPackage(settings);
-        if (result.value) {
-            return result.path;
-        } else {
-            return codeString;
-        }
+        codeString = vscode_test.resolveCliPathFromVSCodeExecutablePath(process.env.CODE_SYNC_EXEC_PATH);
     } else {
-        return codeString;
+        codeString = getCodeString(settings);
+
+        if (windows) {
+            codeString = `${codeString}.cmd`;
+        } else if (linux) {
+            let result = isCodeASnapPackage(settings);
+            if (result.value) {
+                codeString = result.path;
+            }
+        }
     }
+
+    // escape string in case path has spaces
+    return `"${codeString}"`;
 }
 
 /**
