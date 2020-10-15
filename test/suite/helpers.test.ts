@@ -2,9 +2,7 @@ import * as assert from 'assert';
 import * as helpers from '../../src/helpers';
 import * as os from 'os';
 import * as path from 'path';
-import * as settings from '../../src/settings';
 import * as test_helpers from './test-helpers';
-import * as vscode from 'vscode';
 
 suite('helper.ts', () => {
     suite('isInsiders', function() {

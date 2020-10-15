@@ -15,6 +15,12 @@ export class LocalSettings {
         this.codeSyncExtensionDir = codeSyncExtensionDir;
     }
 
+    /**
+     * Imports external settings to VSCode while adding local setting values.
+     * 
+     * @param externalSettingsPath Path to external settings.json 
+     * @param internalSettingsPath Path to internal settings.json
+     */
     import(externalSettingsPath: string, internalSettingsPath: string): void {
         let localSettingsPath: string = path.join(this.codeSyncExtensionDir, LOCAL_SETTINGS);
         let settings: any = helpers.parseJson(fs.readFileSync(externalSettingsPath, 'utf8'));
@@ -30,6 +36,12 @@ export class LocalSettings {
         fs.writeFileSync(internalSettingsPath, helpers.stringifyJson(settings));
     }
 
+    /**
+     * Exports internal settings from VSCode while removing local setting values.
+     * 
+     * @param internalSettingsPath Path to internal settings.json 
+     * @param externalSettingsPath Path to external settings.json
+     */
     export(internalSettingsPath: string, externalSettingsPath: string): void {
         let localSettingsPath: string = path.join(this.codeSyncExtensionDir, LOCAL_SETTINGS);
         let settings: any = helpers.parseJson(fs.readFileSync(internalSettingsPath, 'utf8'));

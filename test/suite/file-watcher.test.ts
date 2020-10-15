@@ -1,13 +1,12 @@
 import * as assert from 'assert';
 import * as fs from 'fs';
 import * as file_watcher from '../../src/file-watcher';
-import * as os from 'os';
 import * as path from 'path';
 import * as settings from '../../src/settings';
 import * as test_helpers from './test-helpers';
-import * as vscode from 'vscode';
 
 suite('file-watcher.ts', function() {
+    let testingResources: test_helpers.TestingResources;
     let testDir: string;
     let testFile: string;
     let settingsFile: string;
@@ -19,27 +18,32 @@ suite('file-watcher.ts', function() {
     suiteSetup(function(done) {
         this.timeout(5000);
         // create directory for test, will clean up after test is complete
-        testDir = path.join(os.homedir(), 'file_watch_test/');
+        testingResources = test_helpers.createTestingResources();
+        testDir = testingResources.directories[0];
         if (!fs.existsSync(testDir)) {
             fs.mkdirSync(testDir);
         }
 
         // file to watch
         testFile = path.join(testDir, 'testing.txt');
+        testingResources.files.push(testFile);
         if (!fs.existsSync(testFile)) {
             fs.writeFileSync(testFile, Buffer.from(''));
         }
 
         // settings file required for FileWatcher, looks for settings.autoExport === true
         settingsFile = path.join(testDir, 'settings.json');
+        testingResources.files.push(settingsFile);
 
         // create snippets directory for testing
         snippetsDir = path.join(testDir, 'snippets/');
+        testingResources.directories.push(snippetsDir);
         if (!fs.existsSync(snippetsDir)) {
             fs.mkdirSync(snippetsDir);
         }
 
         snippetsFile = path.join(snippetsDir, 'json.json');
+        testingResources.files.push(snippetsFile);
         // We create the snippets file here instead of in the test because this is much closer to how VSCode acts when
         // new snippet files are created. They are first created and saved by VSCode before being presented to the user.
         // This means that all subsequent user saves are change events rather than add events.
@@ -95,10 +99,6 @@ suite('file-watcher.ts', function() {
 
     suiteTeardown(function() {
         watcher.shutdown();
-        fs.unlinkSync(snippetsFile);
-        fs.rmdirSync(snippetsDir);
-        fs.unlinkSync(testFile);
-        fs.unlinkSync(settingsFile);
-        fs.rmdirSync(testDir);
+        test_helpers.destroyTestingResources(testingResources);
     });
 });
