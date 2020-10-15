@@ -60,10 +60,10 @@ suite('file-watcher.ts', function() {
         const codeSyncSettings: settings.CodeSyncSettings = new settings.CodeSyncSettings(settingsFile, '');
         watcher = new file_watcher.FileWatcher(files, codeSyncSettings);
 
-        // wait at least 2 seconds for writes to be noticed by file watcher before tests start
+        // wait at least 3 seconds for writes to be noticed by file watcher before tests start
         setTimeout(function() {
             done();
-        }, 2000);
+        }, 3000);
     });
 
     setup(function() {
