@@ -35,6 +35,7 @@
   "activationEvents": [
     "*"
   ],
+  "enableProposedApi": true,
   "main": "./out/src/extension",
   "contributes": {
     "commands": [
@@ -168,6 +169,12 @@
         "command": "codeSync.setCodeSettingsPath",
         "title": "Set VSCode settings path"
       }
+    ],
+    "authentication": [
+      {
+        "label": "CodeSync",
+        "id": "codesync"
+      }
     ]
   },
   "scripts": {
@@ -180,7 +187,6 @@
     "@types/mocha": "^8.0.3",
     "@types/node": "^12.12.6",
     "@types/rimraf": "^3.0.0",
-    "@types/vscode": "^1.14.0",
     "mocha": "^8.1.3",
     "typescript": "^3.9.7",
     "vscode-test": "^1.4.0"

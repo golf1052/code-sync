@@ -9,6 +9,48 @@ var codeSync: cs.CodeSync;
 
 export async function activate(context: vscode.ExtensionContext) {
     logger = new Logger('extension');
+    const sessions: vscode.AuthenticationSession[] = [];
+    const session: vscode.AuthenticationSession = {
+        id: "codesync-session",
+        accessToken: "random",
+        account: {
+            id: "account",
+            label: "CodeSync"
+        },
+        scopes: []
+    };
+    const onDidChangeSessions = new vscode.EventEmitter<vscode.AuthenticationProviderAuthenticationSessionsChangeEvent>();
+    const authenticationProvider: vscode.AuthenticationProvider = {
+        id: "codesync",
+        label: "CodeSync Local File System Provider",
+        supportsMultipleAccounts: false,
+        onDidChangeSessions: onDidChangeSessions.event,
+        getSessions: async () => {
+            return sessions;
+        },
+        login: async (scopes) => {
+            sessions.push(session);
+            onDidChangeSessions.fire({
+                added: [session.id],
+                removed: [],
+                changed: []
+            });
+            console.log(`logged into ${session.id}`);
+            return session;
+        },
+        logout: async (sessionId) => {
+            onDidChangeSessions.fire({
+                added: [],
+                removed: [sessionId],
+                changed: []
+            });
+            console.log(`logging out of ${sessionId}`);
+            sessions.splice(0, 1);
+        }
+    };
+    let provider = vscode.authentication.registerAuthenticationProvider(authenticationProvider);
+    // const newSession: vscode.AuthenticationSession = await vscode.authentication.getSession("codesync", [], {createIfNone: true});
+    // console.log(`new session id: ${newSession.id}`);
     codeSync = new cs.CodeSync(cs.vsCodeExtensionDir, cs.codeSyncExtensionDir, '');
     // we need to check for settings to ensure they exist because we start using them right away
     await codeSync.checkForSettings();
@@ -149,7 +191,8 @@ export async function activate(context: vscode.ExtensionContext) {
         setSyncPathDisposable,
         toggleStatusBarDisposable,
         setCodeExecutableName,
-        setCodeSettingsPath
+        setCodeSettingsPath,
+        provider
     );
 }
 
