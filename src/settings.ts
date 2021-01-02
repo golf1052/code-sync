@@ -1,7 +1,5 @@
 'use strict';
-import * as vscode from 'vscode';
 import * as path from 'path';
-import * as helpers from './helpers';
 import * as fs from 'fs';
 import * as cs from './cs';
 import {Logger} from './logger';
@@ -35,15 +33,15 @@ export class CodeSyncSettings {
     private settings: Settings;
     private externalExtensions: ExternalExtensions;
     // points to the settings.json file in the extension dir
-    private internalPath: string;
+    private codeSyncSettingsPath: string;
     // points to the extensions.json file in the CodeSync dir
     private externalExtensionsPath: string;
 
-    constructor(internalPath: string, externalExtensionsPath: string) {
+    constructor(codeSyncSettingsPath: string, externalExtensionsPath: string) {
         this.logger = new Logger('settings');
-        this.logger.appendLine(`Creating settings with internal settings.json path and external extensions.json path: ${internalPath}, ${externalExtensionsPath}.`);
+        this.logger.appendLine(`Creating settings with internal settings.json path and external extensions.json path: ${codeSyncSettingsPath}, ${externalExtensionsPath}.`);
         this.externalExtensions = {extensions: []};
-        this.internalPath = internalPath;
+        this.codeSyncSettingsPath = codeSyncSettingsPath;
         this.externalExtensionsPath = externalExtensionsPath;
     }
 
@@ -89,6 +87,7 @@ export class CodeSyncSettings {
         this.externalExtensionsPath = externalExtensionsPath;
     }
 
+    // TODO: Remove these? They aren't used at all.
     excludeInstalledPackage(p: string) {
         if (this.Settings.excluded.installed.indexOf(p) == -1) {
             this.Settings.excluded.installed.push(p);
@@ -117,7 +116,7 @@ export class CodeSyncSettings {
 
     save() {
         this.ExternalExtensionsPath = path.join(this.settings.externalPath, cs.EXTENSIONS);
-        fs.writeFileSync(this.internalPath, JSON.stringify(this.settings, null, 4));
+        fs.writeFileSync(this.codeSyncSettingsPath, JSON.stringify(this.settings, null, 4));
     }
 
     saveExtensions() {
@@ -125,7 +124,7 @@ export class CodeSyncSettings {
     }
 
     private retrieveInternal(): Settings {
-        return JSON.parse(fs.readFileSync(this.internalPath, 'utf8'));
+        return JSON.parse(fs.readFileSync(this.codeSyncSettingsPath, 'utf8'));
     }
 
     private retrieveExternalExtensions(): ExternalExtensions {
